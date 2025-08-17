@@ -339,6 +339,7 @@
             display: flex;
             gap: 6px;
             margin-bottom: 8px;
+            align-items: center;
         }
 
         .view-btn {
@@ -484,7 +485,7 @@
         /* =========================== */
         /* MATRIX PLOT STYLES (IMAGE-BASED) */
         /* =========================== */
-
+        
         #top-right-controls {
             position: fixed;
             top: 24px;
@@ -611,6 +612,16 @@
             #top-right-controls {
                 display: none; /* Hide matrix button on small screens */
             }
+            #panel-container {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 90vw;
+                max-height: 90vh;
+            }
+            #control-panel {
+                width: 100%;
+            }
         }
 
         /* =========================== */
@@ -651,7 +662,7 @@
                 </div>
             </button>
             <h1 id="title">Global Trade Network</h1>
-            <p id="subtitle">Interactive 2D visualization of international trade relationships</p>
+            <p id="subtitle">Edges indicate the flow of goods, with volume in USD.</p>
             
             <div id="panel-content">
                 <div class="section hide-on-collapse">
@@ -700,6 +711,9 @@
                         <button class="view-btn" data-view="population" onclick="app.setView('population')">Population</button>
                         <button class="view-btn" data-view="trade_volume" onclick="app.setView('trade_volume')">Volume</button>
                         <button class="view-btn" data-view="region" onclick="app.setView('region')">Region</button>
+                    </div>
+                    <div class="view-controls" style="margin-top: 12px;">
+                        <button id="flag-toggle-btn" class="view-btn active">Toggle Flags</button>
                     </div>
                 </div>
 
@@ -770,6 +784,7 @@
             currentView: 'closeness',
             viewMinMax: {},
             productCategories: [],
+            showFlags: true,
 
             partnerships: {
                 "BRICS": ["C076", "C643", "C356", "C156", "C710"],
@@ -861,7 +876,7 @@
                 try {
                     document.getElementById('product-category-select').value = category;
 
-                    let filenameCategory = category.replace(/\//g, ' or ').replace(/ /g, '_');
+                    let filenameCategory = category.replace(/\//g, '_or_').replace(/ /g, '_');
                     const filePath = `./data/edge-lists/edge-list-${filenameCategory}.json`;
                     const edgeList = await app.fetchJSON(filePath);
 
@@ -960,6 +975,11 @@
                 document.getElementById('matrix-toggle-btn').onclick = () => matrixOverlay.classList.remove('hidden');
                 document.getElementById('matrix-close-btn').onclick = () => matrixOverlay.classList.add('hidden');
                 matrixOverlay.onclick = (e) => { if (e.target === matrixOverlay) matrixOverlay.classList.add('hidden'); };
+                document.getElementById('flag-toggle-btn').onclick = () => {
+                    app.showFlags = !app.showFlags;
+                    document.getElementById('flag-toggle-btn').classList.toggle('active', app.showFlags);
+                    app.graph.nodeCanvasObject(app.graph.nodeCanvasObject()); // Re-render nodes
+                };
             },
 
             renderAdjacencyMatrix() {
@@ -1076,7 +1096,7 @@
                 document.querySelector(`.view-btn[data-view='${viewType}']`)?.classList.add('active');
                 app.updateLegend();
                 app.updateMetrics();
-                app.graph.nodeColor(app.graph.nodeColor()); // Re-trigger color update
+                app.graph.nodeCanvasObject(app.graph.nodeCanvasObject()); // Re-render nodes
             },
 
             updateUI() {
@@ -1237,49 +1257,50 @@
                 app.graph = ForceGraph()(container)
                     .graphData({ nodes: [], links: [] })
                     .nodeId('id')
+                    .nodeVal(node => app.highlightNodes.has(node) ? 12 : 8)
                     .backgroundColor('#f8fafc')
                     .linkColor(() => '#9ca3af')
                     .linkCurvature(0.2)
+                    .linkDirectionalArrowLength(6)
+                    .linkDirectionalArrowRelPos(1)
+                    .onNodeDragEnd(node => {
+                        node.fx = null;
+                        node.fy = null;
+                    })
                     .nodeCanvasObject((node, ctx, globalScale) => {
                         const size = app.highlightNodes.has(node) ? 12 : 8;
                         const flagUrl = `./data/country-flags/flag-thumbnail-${node.id}.png`;
 
                         if (app.flagImageCache[node.id] === undefined) {
-                            app.flagImageCache[node.id] = false; // Set placeholder to prevent re-fetching
+                            app.flagImageCache[node.id] = false; 
                             const img = new Image();
                             img.src = flagUrl;
-                            img.onload = () => {
-                                app.flagImageCache[node.id] = img;
-                            };
-                            img.onerror = () => {
-                                app.flagImageCache[node.id] = null; // Mark as failed
-                            };
+                            img.onload = () => { app.flagImageCache[node.id] = img; };
+                            img.onerror = () => { app.flagImageCache[node.id] = null; };
                         }
 
                         const img = app.flagImageCache[node.id];
                         
-                        ctx.save();
+                        const borderColor = app.highlightNodes.has(node) 
+                            ? (node === app.hoverNode ? 'rgba(239, 68, 68, 0.8)' : 'rgba(251, 146, 0, 0.6)')
+                            : app.getColorForValue(node);
+
+                        // Draw border
                         ctx.beginPath();
                         ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
+                        ctx.fillStyle = borderColor;
+                        ctx.fill();
                         ctx.closePath();
 
-                        if (img) {
+                        if (app.showFlags && img) {
+                            ctx.save();
+                            const borderSize = 2.5;
+                            ctx.beginPath();
+                            ctx.arc(node.x, node.y, size - borderSize, 0, 2 * Math.PI, false);
                             ctx.clip();
-                            ctx.drawImage(img, node.x - size, node.y - size, size * 2, size * 2);
-                        } else {
-                            // Fallback to color if image not loaded/failed
-                            ctx.fillStyle = app.getColorForValue(node);
-                            ctx.fill();
+                            ctx.drawImage(img, node.x - (size - borderSize), node.y - (size - borderSize), (size - borderSize) * 2, (size - borderSize) * 2);
+                            ctx.restore();
                         }
-
-                        // Draw highlight border
-                        if (app.highlightNodes.has(node)) {
-                            ctx.lineWidth = 2;
-                            ctx.strokeStyle = node === app.hoverNode ? 'rgba(239, 68, 68, 0.8)' : 'rgba(251, 146, 0, 0.6)';
-                            ctx.stroke();
-                        }
-                        
-                        ctx.restore();
                     })
                     .onNodeHover(node => {
                         app.highlightNodes.clear();
@@ -1309,7 +1330,7 @@
                             <img src="${flagUrl}" class="tooltip-flag" onerror="this.style.display='none'">
                             <div class="tooltip-country">${node.name}</div>`;
                         
-                        const excludedKeys = new Set(['id', 'name', 'active', 'index', 'x', 'y', 'vx', 'vy', 'neighbors', 'links']);
+                        const excludedKeys = new Set(['id', 'name', 'active', 'index', 'x', 'y', 'vx', 'vy', 'neighbors', 'links', 'fx', 'fy']);
 
                         for (const [key, value] of Object.entries(node)) {
                             if (excludedKeys.has(key) || value === undefined) continue;
@@ -1330,7 +1351,16 @@
 
                         tooltipHtml += `</div>`;
                         return tooltipHtml;
-                    });
+                    })
+                    .linkLabel(link => {
+                        const sourceNode = app.nodeMap.get(typeof link.source === 'object' ? link.source.id : link.source);
+                        const targetNode = app.nodeMap.get(typeof link.target === 'object' ? link.target.id : link.target);
+                        return `<div class="graph-tooltip" style="max-width: 300px;">
+                            Exports from <strong>${sourceNode.name}</strong> to <strong>${targetNode.name}</strong><br>
+                            Value: $${(link.value / 1000000).toFixed(2)}M
+                        </div>`;
+                    })
+                    .linkHoverPrecision(8);
                 
                 app.graph.d3Force('charge').strength(-800);
                 app.graph.d3Force('link').distance(200);
