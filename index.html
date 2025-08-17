@@ -261,8 +261,31 @@
             color: #374151;
             transition: all 0.2s ease;
         }
+        
+        #partnership-select {
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 1px solid #d1d5db;
+            color: #374151;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            flex: 2; /* Take up more space */
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            -webkit-appearance: none; /* Allows custom styling on selects */
+            -moz-appearance: none;
+            appearance: none;
+            /* Custom arrow */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            background-size: 1em;
+            padding-right: 2.5rem; /* Make room for the arrow */
+        }
 
-        #country-search:focus, #product-category-select:focus {
+        #country-search:focus, #product-category-select:focus, #partnership-select:focus {
             outline: none;
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
@@ -333,7 +356,7 @@
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
 
-        .view-btn:hover {
+        .view-btn:hover, #partnership-select:hover {
             border-color: #9ca3af;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
@@ -499,8 +522,8 @@
             padding: 24px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             position: relative;
-            max-width: 90vw;
-            max-height: 90vh;
+            max-width: 80vw;
+            max-height: 80vh;
             overflow: auto;
         }
         
@@ -537,8 +560,8 @@
         }
 
         .matrix-cell {
-            width: 5px;
-            height: 5px;
+            width: 3px;
+            height: 3px;
         }
 
         /* =========================== */
@@ -636,7 +659,7 @@
                     <div class="view-controls">
                         <button class="view-btn" onclick="app.selectAll()">All</button>
                         <button class="view-btn" onclick="app.selectNone()">None</button>
-                        <button class="view-btn" onclick="app.selectMajor()">Major</button>
+                        <select id="partnership-select" onchange="app.selectPartnership(this.value)"></select>
                     </div>
                     <input type="text" id="country-search" placeholder="Search countries..." class="hide-on-collapse">
                     <div id="country-grid" class="hide-on-collapse"></div>
@@ -690,6 +713,12 @@
             viewMinMax: {},
             productCategories: [],
 
+            partnerships: {
+                "BRICS": ["C076", "C643", "C356", "C156", "C710"],
+                "USMCA": ["C840", "C124", "C484"],
+                "EU Core": ["C276", "C250", "C380", "C724"]
+            },
+
             // Color schemes
             regionColors: {
                 "North America": "#ef4444", "South America": "#10b981", "Europe": "#3b82f6",
@@ -725,6 +754,7 @@
                 
                 this.setupEventListeners();
                 await this.populateCategorySelector();
+                this.populatePartnershipSelector();
 
                 this.initializeGraph();
 
@@ -733,6 +763,7 @@
                 if (this.productCategories.length > 0) {
                     const defaultCategory = this.productCategories.includes("All Products") ? "All Products" : this.productCategories[0];
                     await this.switchNetwork(defaultCategory);
+                    this.selectPartnership("BRICS");
                 } else {
                     console.error("No product categories loaded. Cannot initialize network.");
                     document.getElementById('loading-text').textContent = 'Error: product-categories.json not found or is empty.';
@@ -791,38 +822,13 @@
                     });
 
                     this.gData.nodes = Array.from(this.nodeMap.values());
-                    const nodeIndexMap = new Map(this.gData.nodes.map((node, i) => [node.id, i]));
-
-                    const networkSize = this.gData.nodes.length;
-                    this.adjacencyMatrix = Array(networkSize).fill(0).map(() => Array(networkSize).fill(0));
-
+                    
                     const links = edgeList.map(edge => {
                         const [source, target, value = 1] = edge;
-                        const sourceIndex = nodeIndexMap.get(source);
-                        const targetIndex = nodeIndexMap.get(target);
-
-                        if (sourceIndex !== undefined && targetIndex !== undefined) {
-                            this.adjacencyMatrix[sourceIndex][targetIndex] = value;
-                        }
                         return { source, target, value };
                     });
                     this.gData.links = links;
-
-                    this.gData.nodes.forEach(n => {
-                        n.neighbors = [];
-                        n.links = [];
-                    });
-
-                    this.gData.links.forEach(link => {
-                        const a = this.nodeMap.get(link.source);
-                        const b = this.nodeMap.get(link.target);
-                        if (!a || !b) return;
-                        a.neighbors.push(b);
-                        b.neighbors.push(a);
-                        a.links.push(link);
-                        b.links.push(link);
-                    });
-
+                    
                     this.precomputeCentrality();
                     this.renderAdjacencyMatrix();
                     this.updateGraphData();
@@ -853,24 +859,34 @@
                 }
             },
 
+            populatePartnershipSelector() {
+                const select = document.getElementById('partnership-select');
+                // FIX: Add a disabled "Custom" option for when the selection doesn't match a preset.
+                select.innerHTML = '<option value="custom" disabled>Custom Selection</option>';
+                for (const partnershipName in this.partnerships) {
+                    const option = document.createElement('option');
+                    option.value = partnershipName;
+                    option.textContent = partnershipName;
+                    select.appendChild(option);
+                }
+            },
+
             precomputeCentrality() {
-                const n = this.gData.nodes.length;
+                const nodes = Array.from(this.nodeMap.values());
+                const n = nodes.length;
                 if (n === 0) return;
-                const degree = new Array(n).fill(0);
-                const nodeIndexMap = new Map(this.gData.nodes.map((node, i) => [node.id, i]));
+
+                const degree = new Map();
+                nodes.forEach(node => degree.set(node.id, 0));
 
                 this.gData.links.forEach(link => {
-                    const sourceIndex = nodeIndexMap.get(link.source);
-                    const targetIndex = nodeIndexMap.get(link.target);
-                    if (sourceIndex !== undefined && targetIndex !== undefined) {
-                         degree[sourceIndex]++;
-                         degree[targetIndex]++;
-                    }
+                    degree.set(link.source, degree.get(link.source) + 1);
+                    degree.set(link.target, degree.get(link.target) + 1);
                 });
 
-                this.gData.nodes.forEach((node, i) => {
+                this.nodeMap.forEach(node => {
                     Object.assign(node, {
-                        degree: degree[i],
+                        degree: degree.get(node.id) || 0,
                         closeness: Math.random(),
                         betweenness: Math.random(),
                         eigenvector: Math.random(),
@@ -891,12 +907,25 @@
 
             renderAdjacencyMatrix() {
                 const plot = document.getElementById('matrix-plot');
-                if (!plot || this.adjacencyMatrix.length === 0) {
+                const nodes = Array.from(this.nodeMap.values());
+                const nodeIndexMap = new Map(nodes.map((node, i) => [node.id, i]));
+                const size = nodes.length;
+
+                if (!plot || size === 0) {
                     console.warn("Matrix plot not rendered: No data or element not found.");
                     return;
                 }
+                
+                this.adjacencyMatrix = Array(size).fill(0).map(() => Array(size).fill(0));
+                this.gData.links.forEach(link => {
+                    const sourceIndex = nodeIndexMap.get(link.source);
+                    const targetIndex = nodeIndexMap.get(link.target);
+                    if (sourceIndex !== undefined && targetIndex !== undefined) {
+                        this.adjacencyMatrix[sourceIndex][targetIndex] = link.value || 1;
+                    }
+                });
+
                 plot.innerHTML = '';
-                const size = this.adjacencyMatrix.length;
                 plot.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
                 let maxVal = Math.max(...this.adjacencyMatrix.flat().filter(v => typeof v === 'number'));
                 if (maxVal === -Infinity) maxVal = 0;
@@ -916,7 +945,7 @@
                         const b = Math.round(startColor[2] + ratio * (endColor[2] - startColor[2]));
 
                         cell.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-                        cell.title = `${this.gData.nodes[i]?.name} -> ${this.gData.nodes[j]?.name}: ${value}`;
+                        cell.title = `${nodes[i]?.name} -> ${nodes[j]?.name}: ${value}`;
                         plot.appendChild(cell);
                     }
                 }
@@ -931,7 +960,7 @@
                 Object.keys(this.centralityColors).concat(['gdp', 'population', 'trade_volume']).forEach(view => {
                     this.viewMinMax[view] = { min: Infinity, max: -Infinity };
                 });
-                this.gData.nodes.forEach(c => {
+                this.nodeMap.forEach(c => {
                     if (c.active) {
                         for(const view of Object.keys(this.viewMinMax)) {
                             const val = c[view];
@@ -944,7 +973,7 @@
 
             getColorForValue(node) {
                 if (this.highlightNodes.has(node)) {
-                    return node === this.hoverNode ? 'rgba(239, 68, 68, 0.8)' : 'rgba(251, 146, 60, 0.6)';
+                    return node === this.hoverNode ? 'rgba(239, 68, 68, 0.8)' : 'rgba(251, 146, 0, 0.6)';
                 }
                 if (this.currentView === 'region') return this.regionColors[node.region] || '#6b7280';
                 
@@ -963,8 +992,19 @@
             updateGraphData() {
                 const activeNodes = Array.from(this.nodeMap.values()).filter(n => n.active);
                 const activeNodeIds = new Set(activeNodes.map(n => n.id));
-                const activeLinks = this.gData.links.filter(l => activeNodeIds.has(l.source) && activeNodeIds.has(l.target));
-                this.graph.graphData({ nodes: activeNodes, links: activeLinks });
+                
+                const activeLinks = this.gData.links.filter(l => {
+                    const sourceId = typeof l.source === 'object' && l.source !== null ? l.source.id : l.source;
+                    const targetId = typeof l.target === 'object' && l.target !== null ? l.target.id : l.target;
+                    return activeNodeIds.has(sourceId) && activeNodeIds.has(targetId);
+                });
+
+                // FIX: Pass a deep copy of the data to the graph library to prevent it from
+                // mutating the master data source (`gData`), which was causing inconsistent edge recovery.
+                const clonedNodes = activeNodes.map(n => ({...n}));
+                const clonedLinks = activeLinks.map(l => ({...l}));
+
+                this.graph.graphData({ nodes: clonedNodes, links: clonedLinks });
             },
 
             setView(viewType) {
@@ -981,13 +1021,45 @@
                 this.updateMetrics();
                 this.updateCountryButtons();
                 this.updateLegend();
+                this.updatePartnershipSelectorState(); // FIX: Update dropdown on UI changes.
+            },
+            
+            // FIX: New function to synchronize the partnership dropdown with the current node selection.
+            updatePartnershipSelectorState() {
+                const select = document.getElementById('partnership-select');
+                const activeNodeIds = new Set(
+                    Array.from(this.nodeMap.values())
+                        .filter(n => n.active)
+                        .map(n => n.id)
+                );
+
+                let matchedPartnership = null;
+
+                for (const [name, ids] of Object.entries(this.partnerships)) {
+                    const partnershipIds = new Set(ids);
+                    // Check if the size is the same and every active ID is in the partnership set.
+                    if (activeNodeIds.size === partnershipIds.size && [...activeNodeIds].every(id => partnershipIds.has(id))) {
+                        matchedPartnership = name;
+                        break;
+                    }
+                }
+
+                if (matchedPartnership) {
+                    select.value = matchedPartnership;
+                } else {
+                    select.value = 'custom';
+                }
             },
 
             updateMetrics() {
                 const activeNodes = Array.from(this.nodeMap.values()).filter(c => c.active);
                 const numNodes = activeNodes.length;
                 const activeNodeIds = new Set(activeNodes.map(n => n.id));
-                const numLinks = this.gData.links.filter(l => activeNodeIds.has(l.source) && activeNodeIds.has(l.target)).length;
+                const numLinks = this.gData.links.filter(l => {
+                    const sourceId = typeof l.source === 'object' && l.source !== null ? l.source.id : l.source;
+                    const targetId = typeof l.target === 'object' && l.target !== null ? l.target.id : l.target;
+                    return activeNodeIds.has(sourceId) && activeNodeIds.has(targetId);
+                }).length;
                 const density = numNodes > 1 ? numLinks / (numNodes * (numNodes - 1)) : 0;
                 const modularity = Math.random() * 0.4 + 0.2; // Placeholder
                 Object.entries({
@@ -1070,7 +1142,15 @@
             },
             selectAll() { this.nodeMap.forEach(c => c.active = true); this.updateUI(); this.updateGraphData(); },
             selectNone() { this.nodeMap.forEach(c => c.active = false); this.updateUI(); this.updateGraphData(); },
-            selectMajor() { this.nodeMap.forEach(c => c.active = (c.trade_volume > 1000000)); this.updateUI(); this.updateGraphData(); },
+            
+            selectPartnership(partnershipName) {
+                const partnershipCountries = new Set(this.partnerships[partnershipName]);
+                this.nodeMap.forEach((node, id) => {
+                    node.active = partnershipCountries.has(id);
+                });
+                this.updateUI();
+                this.updateGraphData();
+            },
 
             initializeGraph() {
                 console.log("Initializing graph...");
@@ -1086,10 +1166,19 @@
                     .onNodeHover(node => {
                         this.highlightNodes.clear();
                         this.highlightLinks.clear();
-                        if (node && node.neighbors) {
+                        
+                        if (node) {
                             this.highlightNodes.add(node);
-                            node.neighbors.forEach(neighbor => this.highlightNodes.add(neighbor));
-                            node.links.forEach(link => this.highlightLinks.add(link));
+                            this.gData.links.forEach(link => {
+                                const sourceId = typeof link.source === 'object' && link.source !== null ? link.source.id : link.source;
+                                const targetId = typeof link.target === 'object' && link.target !== null ? link.target.id : link.target;
+
+                                if (sourceId === node.id || targetId === node.id) {
+                                    this.highlightLinks.add(link);
+                                    this.highlightNodes.add(this.nodeMap.get(sourceId));
+                                    this.highlightNodes.add(this.nodeMap.get(targetId));
+                                }
+                            });
                         }
                         this.hoverNode = node || null;
 
