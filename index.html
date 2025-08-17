@@ -1270,12 +1270,15 @@
                     .nodeVal(node => app.highlightNodes.has(node) ? 12 : 8)
                     .backgroundColor('#f8fafc')
                     .linkColor(link => {
-                        const activeNodeCount = app.gData.nodes.filter(n => n.active).length;
-                        const opacity = activeNodeCount > 100 ? 0.1 : 0.6;
-                        return `rgba(156, 163, 175, ${opacity})`;
+                        const activeNodeCount = app.graph.graphData().nodes.length;
+                        const opacity = Math.max(0.1, 1 - activeNodeCount / 200);
+                        return `rgba(156, 163, 175, ${app.highlightLinks.has(link) ? 0.8 : opacity})`;
                     })
                     .linkCurvature(0.2)
-                    .linkDirectionalArrowLength(6)
+                    .linkDirectionalArrowLength(link => {
+                        const activeNodeCount = app.graph.graphData().nodes.length;
+                        return activeNodeCount > 100 && !app.highlightLinks.has(link) ? 0 : 6;
+                    })
                     .linkDirectionalArrowRelPos(1)
                     .onNodeDragEnd(node => {
                         node.fx = null;
@@ -1336,7 +1339,7 @@
                         app.hoverNode = node || null;
                     })
                     .linkWidth(link => app.highlightLinks.has(link) ? 4 : 1)
-                    .linkDirectionalParticles(2)
+                    .linkDirectionalParticles(link => app.highlightLinks.has(link) ? 2 : 0)
                     .linkDirectionalParticleWidth(link => app.highlightLinks.has(link) ? 3 : 0)
                     .nodeLabel(node => {
                         const flagUrl = `./data/country-flags/flag-thumbnail-${node.id}.png`;
