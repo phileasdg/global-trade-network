@@ -451,10 +451,21 @@
             line-height: 1.4;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             max-width: 200px;
+            text-align: center; /* Center flag and text */
+        }
+        
+        .tooltip-flag {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #94a3b8;
+            margin-bottom: 8px;
         }
         
         .graph-tooltip .tooltip-row {
             margin-bottom: 2px;
+            text-align: left;
         }
 
         .tooltip-country {
@@ -747,6 +758,7 @@
             gData: { nodes: [], links: [] },
             nodeMap: new Map(),
             adjacencyMatrix: [],
+            flagImageCache: {}, // Cache for flag images
             
             // State for highlighting
             highlightNodes: new Set(),
@@ -798,18 +810,18 @@
                 document.getElementById('loading-overlay').classList.remove('hidden');
                 console.log("App initializing...");
                 
-                this.setupEventListeners();
-                await this.populateCategorySelector();
-                this.populatePartnershipSelector();
+                app.setupEventListeners();
+                await app.populateCategorySelector();
+                app.populatePartnershipSelector();
 
-                this.initializeGraph();
+                app.initializeGraph();
 
-                await this.loadInitialData();
+                await app.loadInitialData();
                 
-                if (this.productCategories.length > 0) {
-                    const defaultCategory = this.productCategories.includes("All Products") ? "All Products" : this.productCategories[0];
-                    await this.switchNetwork(defaultCategory);
-                    this.selectPartnership("BRICS");
+                if (app.productCategories.length > 0) {
+                    const defaultCategory = app.productCategories.includes("All Products") ? "All Products" : app.productCategories[0];
+                    await app.switchNetwork(defaultCategory);
+                    app.selectPartnership("BRICS");
                 } else {
                     console.error("No product categories loaded. Cannot initialize network.");
                     document.getElementById('loading-text').textContent = 'Error: product-categories.json not found or is empty.';
@@ -821,25 +833,25 @@
             },
 
             async loadInitialData() {
-                this.nodeMap.clear();
-                const countryCodes = await this.fetchJSON('./data/country-codes.json');
-                const metadata = await this.fetchJSON('./data/country-metadata.json');
+                app.nodeMap.clear();
+                const countryCodes = await app.fetchJSON('./data/country-codes.json');
+                const metadata = await app.fetchJSON('./data/country-metadata.json');
 
                 if (countryCodes) {
                     for (const [id, name] of Object.entries(countryCodes)) {
-                        this.nodeMap.set(id, { id, name, active: true, region: 'Unknown' });
+                        app.nodeMap.set(id, { id, name, active: true, region: 'Unknown' });
                     }
                 }
 
                 if (metadata && Array.isArray(metadata)) {
                     metadata.forEach(countryData => {
-                        if (countryData.id && this.nodeMap.has(countryData.id)) {
-                            const existingNode = this.nodeMap.get(countryData.id);
-                            this.nodeMap.set(countryData.id, { ...existingNode, ...countryData });
+                        if (countryData.id && app.nodeMap.has(countryData.id)) {
+                            const existingNode = app.nodeMap.get(countryData.id);
+                            app.nodeMap.set(countryData.id, { ...existingNode, ...countryData });
                         }
                     });
                 }
-                console.log(`Initialized ${this.nodeMap.size} countries.`);
+                console.log(`Initialized ${app.nodeMap.size} countries.`);
             },
 
             async switchNetwork(category) {
@@ -851,7 +863,7 @@
 
                     let filenameCategory = category.replace(/\//g, ' or ').replace(/ /g, '_');
                     const filePath = `./data/edge-lists/edge-list-${filenameCategory}.json`;
-                    const edgeList = await this.fetchJSON(filePath);
+                    const edgeList = await app.fetchJSON(filePath);
 
                     if (!edgeList) {
                         throw new Error(`Edge list for "${category}" could not be loaded. Check if the file exists at: ${filePath}`);
@@ -859,26 +871,26 @@
 
                     edgeList.forEach(edge => {
                         const [sourceId, targetId] = edge;
-                        if (!this.nodeMap.has(sourceId)) {
-                            this.nodeMap.set(sourceId, { id: sourceId, name: `Country ${sourceId}`, active: true, region: 'Unknown' });
+                        if (!app.nodeMap.has(sourceId)) {
+                            app.nodeMap.set(sourceId, { id: sourceId, name: `Country ${sourceId}`, active: true, region: 'Unknown' });
                         }
-                        if (!this.nodeMap.has(targetId)) {
-                            this.nodeMap.set(targetId, { id: targetId, name: `Country ${targetId}`, active: true, region: 'Unknown' });
+                        if (!app.nodeMap.has(targetId)) {
+                            app.nodeMap.set(targetId, { id: targetId, name: `Country ${targetId}`, active: true, region: 'Unknown' });
                         }
                     });
 
-                    this.gData.nodes = Array.from(this.nodeMap.values());
+                    app.gData.nodes = Array.from(app.nodeMap.values());
                     
                     const links = edgeList.map(edge => {
                         const [source, target, value = 1] = edge;
                         return { source, target, value };
                     });
-                    this.gData.links = links;
+                    app.gData.links = links;
                     
-                    this.precomputeCentrality();
-                    this.renderAdjacencyMatrix();
-                    this.updateGraphData();
-                    this.updateUI();
+                    app.precomputeCentrality();
+                    app.renderAdjacencyMatrix();
+                    app.updateGraphData();
+                    app.updateUI();
                 } catch (error) {
                     console.error(`Failed to switch network to ${category}:`, error);
                     document.getElementById('graph').innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
@@ -889,12 +901,12 @@
             },
 
             async populateCategorySelector() {
-                const categories = await this.fetchJSON('./data/product-categories.json');
+                const categories = await app.fetchJSON('./data/product-categories.json');
                 if (categories && categories.length > 0) {
-                    this.productCategories = categories;
+                    app.productCategories = categories;
                     const select = document.getElementById('product-category-select');
                     select.innerHTML = '';
-                    this.productCategories.forEach(category => {
+                    app.productCategories.forEach(category => {
                         const option = document.createElement('option');
                         option.value = category;
                         option.textContent = category;
@@ -908,7 +920,7 @@
             populatePartnershipSelector() {
                 const select = document.getElementById('partnership-select');
                 select.innerHTML = '<option value="custom" disabled>Custom Selection</option>';
-                for (const partnershipName in this.partnerships) {
+                for (const partnershipName in app.partnerships) {
                     const option = document.createElement('option');
                     option.value = partnershipName;
                     option.textContent = partnershipName;
@@ -917,19 +929,19 @@
             },
 
             precomputeCentrality() {
-                const nodes = Array.from(this.nodeMap.values());
+                const nodes = Array.from(app.nodeMap.values());
                 const n = nodes.length;
                 if (n === 0) return;
 
                 const degree = new Map();
                 nodes.forEach(node => degree.set(node.id, 0));
 
-                this.gData.links.forEach(link => {
+                app.gData.links.forEach(link => {
                     degree.set(link.source, degree.get(link.source) + 1);
                     degree.set(link.target, degree.get(link.target) + 1);
                 });
 
-                this.nodeMap.forEach(node => {
+                app.nodeMap.forEach(node => {
                     Object.assign(node, {
                         degree: degree.get(node.id) || 0,
                         closeness: Math.random(),
@@ -942,8 +954,8 @@
 
             setupEventListeners() {
                 document.getElementById('panel-toggle-btn').onclick = () => document.getElementById('control-panel').classList.toggle('collapsed');
-                document.getElementById('country-search').addEventListener('input', () => this.updateCountryButtons());
-                document.getElementById('product-category-select').onchange = (e) => this.switchNetwork(e.target.value);
+                document.getElementById('country-search').addEventListener('input', () => app.updateCountryButtons());
+                document.getElementById('product-category-select').onchange = (e) => app.switchNetwork(e.target.value);
                 const matrixOverlay = document.getElementById('matrix-overlay');
                 document.getElementById('matrix-toggle-btn').onclick = () => matrixOverlay.classList.remove('hidden');
                 document.getElementById('matrix-close-btn').onclick = () => matrixOverlay.classList.add('hidden');
@@ -957,7 +969,7 @@
                 const category = document.getElementById('product-category-select').value;
                 document.getElementById('matrix-category-name').textContent = category;
 
-                const activeNodes = Array.from(this.nodeMap.values())
+                const activeNodes = Array.from(app.nodeMap.values())
                     .filter(n => n.active)
                     .sort((a, b) => a.name.localeCompare(b.name));
                 
@@ -976,18 +988,18 @@
                 canvas.width = size;
                 canvas.height = size;
                 
-                this.adjacencyMatrix = Array(size).fill(0).map(() => Array(size).fill(0));
-                this.gData.links.forEach(link => {
+                app.adjacencyMatrix = Array(size).fill(0).map(() => Array(size).fill(0));
+                app.gData.links.forEach(link => {
                     const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
                     const targetId = typeof link.target === 'object' ? link.target.id : link.target;
                     const sourceIndex = nodeIndexMap.get(sourceId);
                     const targetIndex = nodeIndexMap.get(targetId);
                     if (sourceIndex !== undefined && targetIndex !== undefined) {
-                        this.adjacencyMatrix[sourceIndex][targetIndex] = (link.value || 1) / 1000000; // Convert to millions
+                        app.adjacencyMatrix[sourceIndex][targetIndex] = (link.value || 1) / 1000000; // Convert to millions
                     }
                 });
 
-                const values = this.adjacencyMatrix.flat().filter(v => v > 0);
+                const values = app.adjacencyMatrix.flat().filter(v => v > 0);
                 const maxVal = Math.max(...values, 0);
                 const minVal = Math.min(...values, 1);
 
@@ -998,7 +1010,7 @@
 
                 for (let i = 0; i < size; i++) { // Row (y-axis)
                     for (let j = 0; j < size; j++) { // Column (x-axis)
-                        const value = this.adjacencyMatrix[i][j];
+                        const value = app.adjacencyMatrix[i][j];
                         const pixelIndex = (i * size + j) * 4;
 
                         if (value > 0) {
@@ -1027,33 +1039,15 @@
                 return minOutput + (maxOutput - minOutput) * (value - minInput) / (maxInput - minInput);
             },
 
-            updateViewMinMax() {
-                Object.keys(this.centralityColors).concat(['gdp', 'population', 'trade_volume']).forEach(view => {
-                    this.viewMinMax[view] = { min: Infinity, max: -Infinity };
-                });
-                this.nodeMap.forEach(c => {
-                    if (c.active) {
-                        for(const view of Object.keys(this.viewMinMax)) {
-                            const val = c[view];
-                            if (val < this.viewMinMax[view].min) this.viewMinMax[view].min = val;
-                            if (val > this.viewMinMax[view].max) this.viewMinMax[view].max = val;
-                        }
-                    }
-                });
-            },
-
             getColorForValue(node) {
-                if (this.highlightNodes.has(node)) {
-                    return node === this.hoverNode ? 'rgba(239, 68, 68, 0.8)' : 'rgba(251, 146, 0, 0.6)';
-                }
-                if (this.currentView === 'region') return this.regionColors[node.region] || '#6b7280';
+                if (app.currentView === 'region') return app.regionColors[node.region] || '#6b7280';
                 
-                const colors = this.centralityColors[this.currentView] || this.centralityColors.closeness;
-                const { min, max } = this.viewMinMax[this.currentView] || { min: 0, max: 1 };
+                const colors = app.centralityColors[app.currentView] || app.centralityColors.closeness;
+                const { min, max } = app.viewMinMax[app.currentView] || { min: 0, max: 1 };
                 if (min === max) return colors.medium;
 
-                const value = node[this.currentView];
-                const normalized = this.normalizeValue(value, min, max, 0, 1);
+                const value = node[app.currentView];
+                const normalized = app.normalizeValue(value, min, max, 0, 1);
                 
                 if (normalized > 0.7) return colors.high;
                 if (normalized > 0.4) return colors.medium;
@@ -1061,10 +1055,10 @@
             },
 
             updateGraphData() {
-                const activeNodes = Array.from(this.nodeMap.values()).filter(n => n.active);
+                const activeNodes = Array.from(app.nodeMap.values()).filter(n => n.active);
                 const activeNodeIds = new Set(activeNodes.map(n => n.id));
                 
-                const activeLinks = this.gData.links.filter(l => {
+                const activeLinks = app.gData.links.filter(l => {
                     const sourceId = typeof l.source === 'object' && l.source !== null ? l.source.id : l.source;
                     const targetId = typeof l.target === 'object' && l.target !== null ? l.target.id : l.target;
                     return activeNodeIds.has(sourceId) && activeNodeIds.has(targetId);
@@ -1073,37 +1067,52 @@
                 const clonedNodes = activeNodes.map(n => ({...n}));
                 const clonedLinks = activeLinks.map(l => ({...l}));
 
-                this.graph.graphData({ nodes: clonedNodes, links: clonedLinks });
+                app.graph.graphData({ nodes: clonedNodes, links: clonedLinks });
             },
 
             setView(viewType) {
-                this.currentView = viewType;
+                app.currentView = viewType;
                 document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
                 document.querySelector(`.view-btn[data-view='${viewType}']`)?.classList.add('active');
-                this.updateLegend();
-                this.updateMetrics();
-                this.graph.nodeColor(node => this.getColorForValue(node));
+                app.updateLegend();
+                app.updateMetrics();
+                app.graph.nodeColor(app.graph.nodeColor()); // Re-trigger color update
             },
 
             updateUI() {
-                this.updateViewMinMax();
-                this.updateMetrics();
-                this.updateCountryButtons();
-                this.updateLegend();
-                this.updatePartnershipSelectorState();
+                app.updateViewMinMax();
+                app.updateMetrics();
+                app.updateCountryButtons();
+                app.updateLegend();
+                app.updatePartnershipSelectorState();
+            },
+
+            updateViewMinMax() {
+                Object.keys(app.centralityColors).concat(['gdp', 'population', 'trade_volume']).forEach(view => {
+                    app.viewMinMax[view] = { min: Infinity, max: -Infinity };
+                });
+                app.nodeMap.forEach(c => {
+                    if (c.active) {
+                        for(const view of Object.keys(app.viewMinMax)) {
+                            const val = c[view];
+                            if (val < app.viewMinMax[view].min) app.viewMinMax[view].min = val;
+                            if (val > app.viewMinMax[view].max) app.viewMinMax[view].max = val;
+                        }
+                    }
+                });
             },
             
             updatePartnershipSelectorState() {
                 const select = document.getElementById('partnership-select');
                 const activeNodeIds = new Set(
-                    Array.from(this.nodeMap.values())
+                    Array.from(app.nodeMap.values())
                         .filter(n => n.active)
                         .map(n => n.id)
                 );
 
                 let matchedPartnership = null;
 
-                for (const [name, ids] of Object.entries(this.partnerships)) {
+                for (const [name, ids] of Object.entries(app.partnerships)) {
                     const partnershipIds = new Set(ids);
                     if (activeNodeIds.size === partnershipIds.size && [...activeNodeIds].every(id => partnershipIds.has(id))) {
                         matchedPartnership = name;
@@ -1119,10 +1128,10 @@
             },
 
             updateMetrics() {
-                const activeNodes = Array.from(this.nodeMap.values()).filter(c => c.active);
+                const activeNodes = Array.from(app.nodeMap.values()).filter(c => c.active);
                 const numNodes = activeNodes.length;
                 const activeNodeIds = new Set(activeNodes.map(n => n.id));
-                const numLinks = this.gData.links.filter(l => {
+                const numLinks = app.gData.links.filter(l => {
                     const sourceId = typeof l.source === 'object' && l.source !== null ? l.source.id : l.source;
                     const targetId = typeof l.target === 'object' && l.target !== null ? l.target.id : l.target;
                     return activeNodeIds.has(sourceId) && activeNodeIds.has(targetId);
@@ -1140,26 +1149,26 @@
                 const container = document.getElementById('country-grid');
                 const searchValue = document.getElementById('country-search').value.toLowerCase();
                 container.innerHTML = '';
-                Array.from(this.nodeMap.values())
+                Array.from(app.nodeMap.values())
                     .filter(c => c.name.toLowerCase().includes(searchValue))
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .forEach(country => {
                         const button = document.createElement('button');
                         button.className = `country-toggle ${country.active ? 'active' : 'inactive'}`;
                         button.textContent = country.name;
-                        button.onclick = () => this.toggleCountry(country);
+                        button.onclick = () => app.toggleCountry(country);
                         container.appendChild(button);
                     });
             },
 
             toggleCountry(country) {
-                const node = this.nodeMap.get(country.id);
+                const node = app.nodeMap.get(country.id);
                 if (node) {
                     node.active = !node.active;
                 }
-                this.updateUI();
-                this.updateGraphData();
-                this.renderAdjacencyMatrix(); // Re-render matrix on country change
+                app.updateUI();
+                app.updateGraphData();
+                app.renderAdjacencyMatrix(); // Re-render matrix on country change
             },
 
             updateLegend() {
@@ -1169,20 +1178,20 @@
                 const existingItems = legendContainer.querySelectorAll('.legend-item, .legend-gradient');
                 existingItems.forEach(item => item.remove());
                 
-                if (this.currentView === 'region') {
+                if (app.currentView === 'region') {
                     titleElement.textContent = 'Region';
-                    Object.entries(this.regionColors).forEach(([region, color]) => {
+                    Object.entries(app.regionColors).forEach(([region, color]) => {
                         const legendItem = document.createElement('div');
                         legendItem.className = 'legend-item';
                         legendItem.innerHTML = `<span class="legend-color" style="background-color: ${color};"></span><span>${region}</span>`;
                         legendContainer.appendChild(legendItem);
                     });
                 } else {
-                    const { min, max } = this.viewMinMax[this.currentView] || { min: 0, max: 1 };
+                    const { min, max } = app.viewMinMax[app.currentView] || { min: 0, max: 1 };
                     const range = max - min;
-                    const colors = this.centralityColors[this.currentView] || this.centralityColors.closeness;
+                    const colors = app.centralityColors[app.currentView] || app.centralityColors.closeness;
                     
-                    titleElement.textContent = this.currentView.charAt(0).toUpperCase() + this.currentView.slice(1).replace('_', ' ');
+                    titleElement.textContent = app.currentView.charAt(0).toUpperCase() + app.currentView.slice(1).replace('_', ' ');
                     
                     const highThreshold = min + (range * 0.7);
                     const mediumThreshold = min + (range * 0.4);
@@ -1208,57 +1217,96 @@
                     });
                 }
             },
-            selectAll() { this.nodeMap.forEach(c => c.active = true); this.updateUI(); this.updateGraphData(); this.renderAdjacencyMatrix(); },
-            selectNone() { this.nodeMap.forEach(c => c.active = false); this.updateUI(); this.updateGraphData(); this.renderAdjacencyMatrix(); },
+            selectAll() { app.nodeMap.forEach(c => c.active = true); app.updateUI(); app.updateGraphData(); app.renderAdjacencyMatrix(); },
+            selectNone() { app.nodeMap.forEach(c => c.active = false); app.updateUI(); app.updateGraphData(); app.renderAdjacencyMatrix(); },
             
             selectPartnership(partnershipName) {
-                const partnershipCountries = new Set(this.partnerships[partnershipName]);
-                this.nodeMap.forEach((node, id) => {
+                const partnershipCountries = new Set(app.partnerships[partnershipName]);
+                app.nodeMap.forEach((node, id) => {
                     node.active = partnershipCountries.has(id);
                 });
-                this.updateUI();
-                this.updateGraphData();
-                this.renderAdjacencyMatrix();
+                app.updateUI();
+                app.updateGraphData();
+                app.renderAdjacencyMatrix();
             },
 
             initializeGraph() {
                 console.log("Initializing graph...");
                 const container = document.getElementById('graph');
                 
-                this.graph = ForceGraph()(container)
+                app.graph = ForceGraph()(container)
                     .graphData({ nodes: [], links: [] })
                     .nodeId('id')
-                    .nodeVal(node => this.highlightNodes.has(node) ? 12 : 8)
                     .backgroundColor('#f8fafc')
                     .linkColor(() => '#9ca3af')
                     .linkCurvature(0.2)
+                    .nodeCanvasObject((node, ctx, globalScale) => {
+                        const size = app.highlightNodes.has(node) ? 12 : 8;
+                        const flagUrl = `./data/country-flags/flag-thumbnail-${node.id}.png`;
+
+                        if (app.flagImageCache[node.id] === undefined) {
+                            app.flagImageCache[node.id] = false; // Set placeholder to prevent re-fetching
+                            const img = new Image();
+                            img.src = flagUrl;
+                            img.onload = () => {
+                                app.flagImageCache[node.id] = img;
+                            };
+                            img.onerror = () => {
+                                app.flagImageCache[node.id] = null; // Mark as failed
+                            };
+                        }
+
+                        const img = app.flagImageCache[node.id];
+                        
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false);
+                        ctx.closePath();
+
+                        if (img) {
+                            ctx.clip();
+                            ctx.drawImage(img, node.x - size, node.y - size, size * 2, size * 2);
+                        } else {
+                            // Fallback to color if image not loaded/failed
+                            ctx.fillStyle = app.getColorForValue(node);
+                            ctx.fill();
+                        }
+
+                        // Draw highlight border
+                        if (app.highlightNodes.has(node)) {
+                            ctx.lineWidth = 2;
+                            ctx.strokeStyle = node === app.hoverNode ? 'rgba(239, 68, 68, 0.8)' : 'rgba(251, 146, 0, 0.6)';
+                            ctx.stroke();
+                        }
+                        
+                        ctx.restore();
+                    })
                     .onNodeHover(node => {
-                        this.highlightNodes.clear();
-                        this.highlightLinks.clear();
+                        app.highlightNodes.clear();
+                        app.highlightLinks.clear();
                         
                         if (node) {
-                            this.highlightNodes.add(node);
-                            this.gData.links.forEach(link => {
+                            app.highlightNodes.add(node);
+                            app.gData.links.forEach(link => {
                                 const sourceId = typeof link.source === 'object' && link.source !== null ? link.source.id : link.source;
                                 const targetId = typeof link.target === 'object' && link.target !== null ? link.target.id : link.target;
 
                                 if (sourceId === node.id || targetId === node.id) {
-                                    this.highlightLinks.add(link);
-                                    this.highlightNodes.add(this.nodeMap.get(sourceId));
-                                    this.highlightNodes.add(this.nodeMap.get(targetId));
+                                    app.highlightLinks.add(link);
+                                    app.highlightNodes.add(app.nodeMap.get(sourceId));
+                                    app.highlightNodes.add(app.nodeMap.get(targetId));
                                 }
                             });
                         }
-                        this.hoverNode = node || null;
-
-                        this.graph.nodeColor(this.graph.nodeColor())
-                                  .nodeVal(this.graph.nodeVal());
+                        app.hoverNode = node || null;
                     })
-                    .linkWidth(link => this.highlightLinks.has(link) ? 4 : 1)
+                    .linkWidth(link => app.highlightLinks.has(link) ? 4 : 1)
                     .linkDirectionalParticles(2)
-                    .linkDirectionalParticleWidth(link => this.highlightLinks.has(link) ? 3 : 0)
+                    .linkDirectionalParticleWidth(link => app.highlightLinks.has(link) ? 3 : 0)
                     .nodeLabel(node => {
+                        const flagUrl = `./data/country-flags/flag-thumbnail-${node.id}.png`;
                         let tooltipHtml = `<div class="graph-tooltip">
+                            <img src="${flagUrl}" class="tooltip-flag" onerror="this.style.display='none'">
                             <div class="tooltip-country">${node.name}</div>`;
                         
                         const excludedKeys = new Set(['id', 'name', 'active', 'index', 'x', 'y', 'vx', 'vy', 'neighbors', 'links']);
@@ -1284,10 +1332,10 @@
                         return tooltipHtml;
                     });
                 
-                this.graph.d3Force('charge').strength(-800);
-                this.graph.d3Force('link').distance(200);
+                app.graph.d3Force('charge').strength(-800);
+                app.graph.d3Force('link').distance(200);
 
-                this.setView('closeness');
+                app.setView('closeness');
             }
         };
 
