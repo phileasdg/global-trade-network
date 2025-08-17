@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Global Trade Network Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* =========================== */
+        /* RESET AND BASE STYLES       */
+        /* =========================== */
+        
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+            color: #374151;
+            min-height: 100vh;
+            overflow: hidden; /* Prevent body scrollbars */
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* =========================== */
+        /* LOADING OVERLAY             */
+        /* =========================== */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(248, 250, 252, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+            transition: opacity 0.3s ease;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #d1d5db;
+            border-bottom-color: #3b82f6;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #loading-text {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #4b5563;
+        }
+
+
+        /* =========================== */
+        /* CONTROL PANEL STYLES        */
+        /* =========================== */
+        
+        #panel-container {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            z-index: 100;
+            max-height: calc(100vh - 48px);
+            display: flex;
+            transition: width 0.3s ease;
+        }
+
+        #control-panel {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            width: 360px;
+            max-height: 100%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: width 0.3s ease, padding 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #control-panel.collapsed #panel-content {
+            display: none;
+        }
+
+        #panel-content {
+            padding: 0 20px 20px 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .hide-on-collapse {
+            transition: opacity 0.3s ease;
+        }
+
+        #control-panel.collapsed .hide-on-collapse {
+            display: none;
+            opacity: 0;
+        }
+
+        /* Panel Header */
+        #title {
+            padding: 20px 20px 0 20px;
+            margin: 0 0 6px 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+            line-height: 1.2;
+            transition: all 0.3s ease;
+        }
+
+        #subtitle {
+            padding: 0 20px;
+            margin-bottom: 12px;
+            font-size: 0.875rem;
+            color: #6b7280;
+            line-height: 1.4;
+            transition: all 0.3s ease;
+        }
+
+        /* Toggle Button */
+        #panel-toggle-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 101;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        #panel-toggle-btn:hover {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-icon {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-line {
+            width: 16px;
+            height: 2px;
+            background: #6b7280;
+            border-radius: 1px;
+            transition: all 0.2s ease;
+        }
+
+        #control-panel.collapsed .toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        #panel-toggle-btn:hover .toggle-line {
+            background: #374151;
+        }
+
+        /* =========================== */
+        /* SECTION STYLES              */
+        /* =========================== */
+        
+        .section {
+            margin-bottom: 20px;
+            padding: 12px;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .section:first-child {
+            margin-top: 20px;
+        }
+
+        .section h3 {
+            margin: 0 0 8px 0;
+            color: #111827;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .section-description {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+
+        /* =========================== */
+        /* METRICS GRID                */
+        /* =========================== */
+        
+        #metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .metric-card {
+            padding: 12px;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .metric-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: #6b7280;
+            margin: 4px 0 0 0;
+        }
+
+        /* =========================== */
+        /* CONTROLS AND BUTTONS        */
+        /* =========================== */
+        
+        #country-search, #product-category-select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: #ffffff;
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+
+        #country-search:focus, #product-category-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        #country-search::placeholder {
+            color: #9ca3af;
+        }
+
+        #country-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-right: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .country-toggle {
+            padding: 10px 14px;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-align: left;
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+
+        .country-toggle:hover {
+            border-color: #9ca3af;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .country-toggle.active {
+            background: #10b981;
+            border-color: #10b981;
+            color: #ffffff;
+        }
+
+        .country-toggle.inactive {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: #ffffff;
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .view-btn {
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 1px solid #d1d5db;
+            color: #374151;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            flex: 1;
+            text-align: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .view-btn:hover {
+            border-color: #9ca3af;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .view-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #ffffff;
+        }
+
+        #stats {
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-align: center;
+            padding: 8px;
+            background: #ffffff;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 0;
+        }
+
+        /* =========================== */
+        /* 2D GRAPH AND LEGEND         */
+        /* =========================== */
+        
+        #graph {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            background: #f8fafc;
+        }
+
+        #legend {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 18px;
+            z-index: 99;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            max-width: 180px;
+        }
+
+        #legend-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 10px 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+            color: #374151;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* =========================== */
+        /* TOOLTIP STYLES              */
+        /* =========================== */
+        
+        .force-graph-tooltip {
+            background: transparent !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .graph-tooltip {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #f1f5f9;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.4;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            max-width: 200px;
+        }
+        
+        .graph-tooltip .tooltip-row {
+            margin-bottom: 2px;
+        }
+
+        .tooltip-country {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 6px;
+            font-size: 16px;
+        }
+        
+        .tooltip-key {
+            font-weight: 600;
+            color: #94a3b8;
+            margin-right: 6px;
+        }
+
+        /* =========================== */
+        /* MATRIX PLOT STYLES          */
+        /* =========================== */
+
+        #top-right-controls {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 101;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+        .icon-btn:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            color: #111827;
+        }
+
+        #matrix-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        #matrix-container {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow: auto;
+        }
+        
+        #matrix-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 16px 0;
+            padding-right: 30px;
+        }
+
+        #matrix-close-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: #f3f4f6;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            color: #6b7280;
+        }
+        #matrix-close-btn:hover {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        #matrix-plot {
+            display: grid;
+            border: 1px solid #e5e7eb;
+        }
+
+        .matrix-cell {
+            width: 5px;
+            height: 5px;
+        }
+
+        /* =========================== */
+        /* SCROLLBAR STYLES            */
+        /* =========================== */
+        
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 2px;
+        }
+    </style>
+
+    <script src="//cdn.jsdelivr.net/npm/force-graph"></script>
+</head>
+
+<body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loading-text">Loading Network Data...</div>
+    </div>
+
+    <div id="panel-container">
+        <div id="control-panel">
+            <button id="panel-toggle-btn">
+                <div class="toggle-icon">
+                    <span class="toggle-line"></span>
+                    <span class="toggle-line"></span>
+                    <span class="toggle-line"></span>
+                </div>
+            </button>
+            <h1 id="title">Global Trade Network</h1>
+            <p id="subtitle">Interactive 2D visualization of international trade relationships</p>
+            
+            <div id="panel-content">
+                <div class="section hide-on-collapse">
+                    <h3>Network Metrics</h3>
+                    <p class="section-description">Key measures of network structure</p>
+                    <div id="metrics">
+                        <div class="metric-card">
+                            <div class="metric-value" id="active-countries">0</div>
+                            <div class="metric-label">Countries</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="trade-links">0</div>
+                            <div class="metric-label">Trade Links</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="network-density">0.000</div>
+                            <div class="metric-label">Density</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="modularity">0.000</div>
+                            <div class="metric-label">Modularity</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section hide-on-collapse">
+                    <h3>Product Category</h3>
+                    <p class="section-description">Select a product network to visualize</p>
+                    <select id="product-category-select"></select>
+                </div>
+
+                <div class="section hide-on-collapse">
+                    <h3>View Options</h3>
+                    <p class="section-description">Choose how to visualize the network</p>
+                    <div class="view-controls">
+                        <button class="view-btn" data-view="degree" onclick="app.setView('degree')">Degree</button>
+                        <button class="view-btn" data-view="betweenness" onclick="app.setView('betweenness')">Between</button>
+                        <button class="view-btn active" data-view="closeness" onclick="app.setView('closeness')">Close</button>
+                    </div>
+                    <div class="view-controls">
+                        <button class="view-btn" data-view="eigenvector" onclick="app.setView('eigenvector')">Eigen</button>
+                        <button class="view-btn" data-view="pagerank" onclick="app.setView('pagerank')">PageRank</button>
+                        <button class="view-btn" data-view="gdp" onclick="app.setView('gdp')">GDP</button>
+                    </div>
+                     <div class="view-controls">
+                        <button class="view-btn" data-view="population" onclick="app.setView('population')">Population</button>
+                        <button class="view-btn" data-view="trade_volume" onclick="app.setView('trade_volume')">Volume</button>
+                        <button class="view-btn" data-view="region" onclick="app.setView('region')">Region</button>
+                    </div>
+                </div>
+
+                <div class="section hide-on-collapse">
+                    <h3>Countries</h3>
+                    <p class="section-description">Toggle countries on and off</p>
+                    <div class="view-controls">
+                        <button class="view-btn" onclick="app.selectAll()">All</button>
+                        <button class="view-btn" onclick="app.selectNone()">None</button>
+                        <button class="view-btn" onclick="app.selectMajor()">Major</button>
+                    </div>
+                    <input type="text" id="country-search" placeholder="Search countries..." class="hide-on-collapse">
+                    <div id="country-grid" class="hide-on-collapse"></div>
+                    <div id="stats" class="hide-on-collapse">
+                        <span id="active-count">0</span> countries, <span id="link-count">0</span> links
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="top-right-controls">
+        <button id="matrix-toggle-btn" class="icon-btn" title="Show Adjacency Matrix">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </button>
+    </div>
+
+    <div id="legend">
+        <h4 id="legend-title">Legend</h4>
+    </div>
+
+    <div id="graph"></div>
+
+    <div id="matrix-overlay" class="hidden">
+        <div id="matrix-container">
+            <h3 id="matrix-title">Adjacency Matrix Heatmap</h3>
+            <button id="matrix-close-btn">&times;</button>
+            <div id="matrix-plot"></div>
+        </div>
+    </div>
+
+    <script>
+        // =========================== //
+        // GLOBAL APPLICATION OBJECT   //
+        // =========================== //
+        
+        const app = {
+            // Core data
+            gData: { nodes: [], links: [] },
+            nodeMap: new Map(),
+            adjacencyMatrix: [],
+            
+            // State for highlighting
+            highlightNodes: new Set(),
+            highlightLinks: new Set(),
+            hoverNode: null,
+
+            // Application state
+            graph: null,
+            currentView: 'closeness',
+            viewMinMax: {},
+            productCategories: [],
+
+            // Color schemes
+            regionColors: {
+                "North America": "#ef4444", "South America": "#10b981", "Europe": "#3b82f6",
+                "Asia": "#f59e0b", "Oceania": "#06b6d4", "Middle East": "#d97706", "Africa": "#84cc16"
+            },
+            centralityColors: {
+                degree: { high: '#8b5cf6', medium: '#a78bfa', low: '#c4b5fd' },
+                betweenness: { high: '#ef4444', medium: '#f87171', low: '#fca5a5' },
+                closeness: { high: '#10b981', medium: '#34d399', low: '#6ee7b7' },
+                eigenvector: { high: '#f59e0b', medium: '#fbbf24', low: '#fde047' },
+                pagerank: { high: '#3b82f6', medium: '#60a5fa', low: '#93c5fd' },
+                gdp: { high: '#dc2626', medium: '#f97316', low: '#84cc16' },
+                population: { high: '#ec4899', medium: '#f472b6', low: '#f9a8d4' },
+                trade_volume: { high: '#06b6d4', medium: '#22d3ee', low: '#67e8f9' }
+            },
+
+            async fetchJSON(url) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} for ${url}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error(`Could not fetch JSON from ${url}:`, error);
+                    return null;
+                }
+            },
+
+            async init() {
+                document.getElementById('loading-overlay').classList.remove('hidden');
+                console.log("App initializing...");
+                
+                this.setupEventListeners();
+                await this.populateCategorySelector();
+
+                this.initializeGraph();
+
+                await this.loadInitialData();
+                
+                if (this.productCategories.length > 0) {
+                    const defaultCategory = this.productCategories.includes("All Products") ? "All Products" : this.productCategories[0];
+                    await this.switchNetwork(defaultCategory);
+                } else {
+                    console.error("No product categories loaded. Cannot initialize network.");
+                    document.getElementById('loading-text').textContent = 'Error: product-categories.json not found or is empty.';
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                    return;
+                }
+                
+                console.log("App initialization complete.");
+            },
+
+            async loadInitialData() {
+                this.nodeMap.clear();
+                const countryCodes = await this.fetchJSON('./data/country-codes.json');
+                const metadata = await this.fetchJSON('./data/country-metadata.json');
+
+                if (countryCodes) {
+                    for (const [id, name] of Object.entries(countryCodes)) {
+                        this.nodeMap.set(id, { id, name, active: true, region: 'Unknown' });
+                    }
+                }
+
+                if (metadata && Array.isArray(metadata)) {
+                    metadata.forEach(countryData => {
+                        if (countryData.id && this.nodeMap.has(countryData.id)) {
+                            const existingNode = this.nodeMap.get(countryData.id);
+                            this.nodeMap.set(countryData.id, { ...existingNode, ...countryData });
+                        }
+                    });
+                }
+                console.log(`Initialized ${this.nodeMap.size} countries.`);
+            },
+
+            async switchNetwork(category) {
+                document.getElementById('loading-overlay').classList.remove('hidden');
+                document.getElementById('loading-text').textContent = `Loading ${category}...`;
+                
+                try {
+                    document.getElementById('product-category-select').value = category;
+
+                    let filenameCategory = category.replace(/\//g, ' or ').replace(/ /g, '_');
+                    const filePath = `./data/edge-lists/edge-list-${filenameCategory}.json`;
+                    const edgeList = await this.fetchJSON(filePath);
+
+                    if (!edgeList) {
+                        throw new Error(`Edge list for "${category}" could not be loaded. Check if the file exists at: ${filePath}`);
+                    }
+
+                    edgeList.forEach(edge => {
+                        const [sourceId, targetId] = edge;
+                        if (!this.nodeMap.has(sourceId)) {
+                            this.nodeMap.set(sourceId, { id: sourceId, name: `Country ${sourceId}`, active: true, region: 'Unknown' });
+                        }
+                        if (!this.nodeMap.has(targetId)) {
+                            this.nodeMap.set(targetId, { id: targetId, name: `Country ${targetId}`, active: true, region: 'Unknown' });
+                        }
+                    });
+
+                    this.gData.nodes = Array.from(this.nodeMap.values());
+                    const nodeIndexMap = new Map(this.gData.nodes.map((node, i) => [node.id, i]));
+
+                    const networkSize = this.gData.nodes.length;
+                    this.adjacencyMatrix = Array(networkSize).fill(0).map(() => Array(networkSize).fill(0));
+
+                    const links = edgeList.map(edge => {
+                        const [source, target, value = 1] = edge;
+                        const sourceIndex = nodeIndexMap.get(source);
+                        const targetIndex = nodeIndexMap.get(target);
+
+                        if (sourceIndex !== undefined && targetIndex !== undefined) {
+                            this.adjacencyMatrix[sourceIndex][targetIndex] = value;
+                        }
+                        return { source, target, value };
+                    });
+                    this.gData.links = links;
+
+                    this.gData.nodes.forEach(n => {
+                        n.neighbors = [];
+                        n.links = [];
+                    });
+
+                    this.gData.links.forEach(link => {
+                        const a = this.nodeMap.get(link.source);
+                        const b = this.nodeMap.get(link.target);
+                        if (!a || !b) return;
+                        a.neighbors.push(b);
+                        b.neighbors.push(a);
+                        a.links.push(link);
+                        b.links.push(link);
+                    });
+
+                    this.precomputeCentrality();
+                    this.renderAdjacencyMatrix();
+                    this.updateGraphData();
+                    this.updateUI();
+                } catch (error) {
+                    console.error(`Failed to switch network to ${category}:`, error);
+                    document.getElementById('graph').innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
+                        <h2>Error Loading Network</h2><p>${error.message}</p></div>`;
+                } finally {
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                }
+            },
+
+            async populateCategorySelector() {
+                const categories = await this.fetchJSON('./data/product-categories.json');
+                if (categories && categories.length > 0) {
+                    this.productCategories = categories;
+                    const select = document.getElementById('product-category-select');
+                    select.innerHTML = '';
+                    this.productCategories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category;
+                        option.textContent = category;
+                        select.appendChild(option);
+                    });
+                } else {
+                    console.error("Could not load product categories from './data/product-categories.json'. The application may not function correctly.");
+                }
+            },
+
+            precomputeCentrality() {
+                const n = this.gData.nodes.length;
+                if (n === 0) return;
+                const degree = new Array(n).fill(0);
+                const nodeIndexMap = new Map(this.gData.nodes.map((node, i) => [node.id, i]));
+
+                this.gData.links.forEach(link => {
+                    const sourceIndex = nodeIndexMap.get(link.source);
+                    const targetIndex = nodeIndexMap.get(link.target);
+                    if (sourceIndex !== undefined && targetIndex !== undefined) {
+                         degree[sourceIndex]++;
+                         degree[targetIndex]++;
+                    }
+                });
+
+                this.gData.nodes.forEach((node, i) => {
+                    Object.assign(node, {
+                        degree: degree[i],
+                        closeness: Math.random(),
+                        betweenness: Math.random(),
+                        eigenvector: Math.random(),
+                        pagerank: Math.random()
+                    });
+                });
+            },
+
+            setupEventListeners() {
+                document.getElementById('panel-toggle-btn').onclick = () => document.getElementById('control-panel').classList.toggle('collapsed');
+                document.getElementById('country-search').addEventListener('input', () => this.updateCountryButtons());
+                document.getElementById('product-category-select').onchange = (e) => this.switchNetwork(e.target.value);
+                const matrixOverlay = document.getElementById('matrix-overlay');
+                document.getElementById('matrix-toggle-btn').onclick = () => matrixOverlay.classList.remove('hidden');
+                document.getElementById('matrix-close-btn').onclick = () => matrixOverlay.classList.add('hidden');
+                matrixOverlay.onclick = (e) => { if (e.target === matrixOverlay) matrixOverlay.classList.add('hidden'); };
+            },
+
+            renderAdjacencyMatrix() {
+                const plot = document.getElementById('matrix-plot');
+                if (!plot || this.adjacencyMatrix.length === 0) {
+                    console.warn("Matrix plot not rendered: No data or element not found.");
+                    return;
+                }
+                plot.innerHTML = '';
+                const size = this.adjacencyMatrix.length;
+                plot.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+                let maxVal = Math.max(...this.adjacencyMatrix.flat().filter(v => typeof v === 'number'));
+                if (maxVal === -Infinity) maxVal = 0;
+
+                const startColor = [237, 233, 254]; // violet-100
+                const endColor = [76, 29, 149];   // violet-900 
+
+                for (let i = 0; i < size; i++) {
+                    for (let j = 0; j < size; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'matrix-cell';
+                        const value = this.adjacencyMatrix[i]?.[j] || 0;
+                        const ratio = maxVal > 0 ? value / maxVal : 0;
+                        
+                        const r = Math.round(startColor[0] + ratio * (endColor[0] - startColor[0]));
+                        const g = Math.round(startColor[1] + ratio * (endColor[1] - startColor[1]));
+                        const b = Math.round(startColor[2] + ratio * (endColor[2] - startColor[2]));
+
+                        cell.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                        cell.title = `${this.gData.nodes[i]?.name} -> ${this.gData.nodes[j]?.name}: ${value}`;
+                        plot.appendChild(cell);
+                    }
+                }
+            },
+
+            normalizeValue(value, minInput, maxInput, minOutput, maxOutput) {
+                if (minInput === maxInput) return minOutput;
+                return minOutput + (maxOutput - minOutput) * (value - minInput) / (maxInput - minInput);
+            },
+
+            updateViewMinMax() {
+                Object.keys(this.centralityColors).concat(['gdp', 'population', 'trade_volume']).forEach(view => {
+                    this.viewMinMax[view] = { min: Infinity, max: -Infinity };
+                });
+                this.gData.nodes.forEach(c => {
+                    if (c.active) {
+                        for(const view of Object.keys(this.viewMinMax)) {
+                            const val = c[view];
+                            if (val < this.viewMinMax[view].min) this.viewMinMax[view].min = val;
+                            if (val > this.viewMinMax[view].max) this.viewMinMax[view].max = val;
+                        }
+                    }
+                });
+            },
+
+            getColorForValue(node) {
+                if (this.highlightNodes.has(node)) {
+                    return node === this.hoverNode ? 'rgba(239, 68, 68, 0.8)' : 'rgba(251, 146, 60, 0.6)';
+                }
+                if (this.currentView === 'region') return this.regionColors[node.region] || '#6b7280';
+                
+                const colors = this.centralityColors[this.currentView] || this.centralityColors.closeness;
+                const { min, max } = this.viewMinMax[this.currentView] || { min: 0, max: 1 };
+                if (min === max) return colors.medium;
+
+                const value = node[this.currentView];
+                const normalized = this.normalizeValue(value, min, max, 0, 1);
+                
+                if (normalized > 0.7) return colors.high;
+                if (normalized > 0.4) return colors.medium;
+                return colors.low;
+            },
+
+            updateGraphData() {
+                const activeNodes = Array.from(this.nodeMap.values()).filter(n => n.active);
+                const activeNodeIds = new Set(activeNodes.map(n => n.id));
+                const activeLinks = this.gData.links.filter(l => activeNodeIds.has(l.source) && activeNodeIds.has(l.target));
+                this.graph.graphData({ nodes: activeNodes, links: activeLinks });
+            },
+
+            setView(viewType) {
+                this.currentView = viewType;
+                document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`.view-btn[data-view='${viewType}']`)?.classList.add('active');
+                this.updateLegend();
+                this.updateMetrics();
+                this.graph.nodeColor(node => this.getColorForValue(node));
+            },
+
+            updateUI() {
+                this.updateViewMinMax();
+                this.updateMetrics();
+                this.updateCountryButtons();
+                this.updateLegend();
+            },
+
+            updateMetrics() {
+                const activeNodes = Array.from(this.nodeMap.values()).filter(c => c.active);
+                const numNodes = activeNodes.length;
+                const activeNodeIds = new Set(activeNodes.map(n => n.id));
+                const numLinks = this.gData.links.filter(l => activeNodeIds.has(l.source) && activeNodeIds.has(l.target)).length;
+                const density = numNodes > 1 ? numLinks / (numNodes * (numNodes - 1)) : 0;
+                const modularity = Math.random() * 0.4 + 0.2; // Placeholder
+                Object.entries({
+                    'active-countries': numNodes, 'trade-links': numLinks,
+                    'network-density': density.toFixed(3), 'modularity': modularity.toFixed(3),
+                    'active-count': numNodes, 'link-count': numLinks
+                }).forEach(([id, value]) => { document.getElementById(id).textContent = value; });
+            },
+
+            updateCountryButtons() {
+                const container = document.getElementById('country-grid');
+                const searchValue = document.getElementById('country-search').value.toLowerCase();
+                container.innerHTML = '';
+                Array.from(this.nodeMap.values())
+                    .filter(c => c.name.toLowerCase().includes(searchValue))
+                    .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
+                    .forEach(country => {
+                        const button = document.createElement('button');
+                        button.className = `country-toggle ${country.active ? 'active' : 'inactive'}`;
+                        button.textContent = country.name;
+                        button.onclick = () => this.toggleCountry(country);
+                        container.appendChild(button);
+                    });
+            },
+
+            toggleCountry(country) {
+                const node = this.nodeMap.get(country.id);
+                if (node) {
+                    node.active = !node.active;
+                }
+                this.updateUI();
+                this.updateGraphData();
+            },
+
+            updateLegend() {
+                const legendContainer = document.getElementById('legend');
+                const titleElement = legendContainer.querySelector('#legend-title');
+                
+                const existingItems = legendContainer.querySelectorAll('.legend-item, .legend-gradient');
+                existingItems.forEach(item => item.remove());
+                
+                if (this.currentView === 'region') {
+                    titleElement.textContent = 'Region';
+                    Object.entries(this.regionColors).forEach(([region, color]) => {
+                        const legendItem = document.createElement('div');
+                        legendItem.className = 'legend-item';
+                        legendItem.innerHTML = `<span class="legend-color" style="background-color: ${color};"></span><span>${region}</span>`;
+                        legendContainer.appendChild(legendItem);
+                    });
+                } else {
+                    const { min, max } = this.viewMinMax[this.currentView] || { min: 0, max: 1 };
+                    const range = max - min;
+                    const colors = this.centralityColors[this.currentView] || this.centralityColors.closeness;
+                    
+                    titleElement.textContent = this.currentView.charAt(0).toUpperCase() + this.currentView.slice(1).replace('_', ' ');
+                    
+                    const highThreshold = min + (range * 0.7);
+                    const mediumThreshold = min + (range * 0.4);
+                    
+                    const formatLabel = (val) => {
+                        if (typeof val !== 'number' || !isFinite(val)) return 'N/A';
+                        if (val > 1e6) return `${(val / 1e6).toFixed(1)}M`;
+                        if (val > 1e3) return `${(val / 1e3).toFixed(1)}K`;
+                        return val.toFixed(2);
+                    }
+
+                    const legendData = [
+                        { color: colors.high, label: `High: > ${formatLabel(highThreshold)}` },
+                        { color: colors.medium, label: `Med: > ${formatLabel(mediumThreshold)}` },
+                        { color: colors.low, label: `Low: < ${formatLabel(mediumThreshold)}` }
+                    ];
+                    
+                    legendData.forEach(item => {
+                        const legendItem = document.createElement('div');
+                        legendItem.className = 'legend-item';
+                        legendItem.innerHTML = `<span class="legend-color" style="background-color: ${item.color};"></span><span>${item.label}</span>`;
+                        legendContainer.appendChild(legendItem);
+                    });
+                }
+            },
+            selectAll() { this.nodeMap.forEach(c => c.active = true); this.updateUI(); this.updateGraphData(); },
+            selectNone() { this.nodeMap.forEach(c => c.active = false); this.updateUI(); this.updateGraphData(); },
+            selectMajor() { this.nodeMap.forEach(c => c.active = (c.trade_volume > 1000000)); this.updateUI(); this.updateGraphData(); },
+
+            initializeGraph() {
+                console.log("Initializing graph...");
+                const container = document.getElementById('graph');
+                
+                this.graph = ForceGraph()(container)
+                    .graphData({ nodes: [], links: [] }) // Start with empty graph
+                    .nodeId('id')
+                    .nodeVal(node => this.highlightNodes.has(node) ? 12 : 8)
+                    .backgroundColor('#f8fafc')
+                    .linkColor(() => '#9ca3af')
+                    .linkCurvature(0.2)
+                    .onNodeHover(node => {
+                        this.highlightNodes.clear();
+                        this.highlightLinks.clear();
+                        if (node && node.neighbors) {
+                            this.highlightNodes.add(node);
+                            node.neighbors.forEach(neighbor => this.highlightNodes.add(neighbor));
+                            node.links.forEach(link => this.highlightLinks.add(link));
+                        }
+                        this.hoverNode = node || null;
+
+                        this.graph.nodeColor(this.graph.nodeColor())
+                                  .nodeVal(this.graph.nodeVal());
+                    })
+                    .linkWidth(link => this.highlightLinks.has(link) ? 4 : 1)
+                    .linkDirectionalParticles(2)
+                    .linkDirectionalParticleWidth(link => this.highlightLinks.has(link) ? 3 : 0)
+                    .nodeLabel(node => {
+                        let tooltipHtml = `<div class="graph-tooltip">
+                            <div class="tooltip-country">${node.name}</div>`;
+                        
+                        const excludedKeys = new Set(['id', 'name', 'active', 'index', 'x', 'y', 'vx', 'vy', 'neighbors', 'links']);
+
+                        for (const [key, value] of Object.entries(node)) {
+                            if (excludedKeys.has(key) || value === undefined) continue;
+
+                            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            let formattedValue = value;
+
+                            if (typeof value === 'number') {
+                                if (value > 1e9) formattedValue = `$${(value / 1e9).toFixed(1)}B`;
+                                else if (value > 1e6) formattedValue = `$${(value / 1e6).toFixed(1)}M`;
+                                else if (value > 1e3) formattedValue = `${(value / 1e3).toFixed(1)}K`;
+                                else if (value < 1 && value > 0) formattedValue = value.toFixed(3);
+                                else formattedValue = value.toLocaleString();
+                            }
+                            
+                            tooltipHtml += `<div class="tooltip-row"><span class="tooltip-key">${formattedKey}:</span><span>${formattedValue}</span></div>`;
+                        }
+
+                        tooltipHtml += `</div>`;
+                        return tooltipHtml;
+                    });
+                
+                this.graph.d3Force('charge').strength(-800);
+                this.graph.d3Force('link').distance(200);
+
+                this.setView('closeness');
+            }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => app.init());
+        window.app = app;
+    </script>
+</body>
+</html>
