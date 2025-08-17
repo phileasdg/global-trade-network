@@ -1,0 +1,1063 @@
+[
+  {
+    "id": "US",
+    "name": "United States",
+    "region": "North America",
+    "gdp": 21430,
+    "population": 331002651,
+    "trade_volume": 4000000
+  },
+  {
+    "id": "CN",
+    "name": "China",
+    "region": "Asia",
+    "gdp": 14340,
+    "population": 1439323776,
+    "trade_volume": 4600000
+  },
+  {
+    "id": "JP",
+    "name": "Japan",
+    "region": "Asia",
+    "gdp": 5082,
+    "population": 126476461,
+    "trade_volume": 1400000
+  },
+  {
+    "id": "DE",
+    "name": "Germany",
+    "region": "Europe",
+    "gdp": 3846,
+    "population": 83783942,
+    "trade_volume": 3200000
+  },
+  {
+    "id": "IN",
+    "name": "India",
+    "region": "Asia",
+    "gdp": 2875,
+    "population": 1380004385,
+    "trade_volume": 850000
+  },
+  {
+    "id": "GB",
+    "name": "United Kingdom",
+    "region": "Europe",
+    "gdp": 2831,
+    "population": 67886011,
+    "trade_volume": 1350000
+  },
+  {
+    "id": "FR",
+    "name": "France",
+    "region": "Europe",
+    "gdp": 2716,
+    "population": 65273511,
+    "trade_volume": 1200000
+  },
+  {
+    "id": "IT",
+    "name": "Italy",
+    "region": "Europe",
+    "gdp": 2001,
+    "population": 60461826,
+    "trade_volume": 980000
+  },
+  {
+    "id": "BR",
+    "name": "Brazil",
+    "region": "South America",
+    "gdp": 1870,
+    "population": 212559417,
+    "trade_volume": 460000
+  },
+  {
+    "id": "CA",
+    "name": "Canada",
+    "region": "North America",
+    "gdp": 1736,
+    "population": 37742154,
+    "trade_volume": 950000
+  },
+  {
+    "id": "RU",
+    "name": "Russia",
+    "region": "Europe",
+    "gdp": 1690,
+    "population": 145934462,
+    "trade_volume": 680000
+  },
+  {
+    "id": "KR",
+    "name": "South Korea",
+    "region": "Asia",
+    "gdp": 1644,
+    "population": 51269185,
+    "trade_volume": 1100000
+  },
+  {
+    "id": "AU",
+    "name": "Australia",
+    "region": "Oceania",
+    "gdp": 1393,
+    "population": 25499884,
+    "trade_volume": 520000
+  },
+  {
+    "id": "ES",
+    "name": "Spain",
+    "region": "Europe",
+    "gdp": 1394,
+    "population": 46754778,
+    "trade_volume": 720000
+  },
+  {
+    "id": "MX",
+    "name": "Mexico",
+    "region": "North America",
+    "gdp": 1269,
+    "population": 128932753,
+    "trade_volume": 890000
+  },
+  {
+    "id": "ID",
+    "name": "Indonesia",
+    "region": "Asia",
+    "gdp": 1119,
+    "population": 273523615,
+    "trade_volume": 380000
+  },
+  {
+    "id": "NL",
+    "name": "Netherlands",
+    "region": "Europe",
+    "gdp": 914,
+    "population": 17134872,
+    "trade_volume": 1400000
+  },
+  {
+    "id": "SA",
+    "name": "Saudi Arabia",
+    "region": "Middle East",
+    "gdp": 700,
+    "population": 34813871,
+    "trade_volume": 420000
+  },
+  {
+    "id": "TR",
+    "name": "Turkey",
+    "region": "Europe",
+    "gdp": 761,
+    "population": 84339067,
+    "trade_volume": 390000
+  },
+  {
+    "id": "CH",
+    "name": "Switzerland",
+    "region": "Europe",
+    "gdp": 752,
+    "population": 8654622,
+    "trade_volume": 650000
+  },
+  {
+    "id": "BE",
+    "name": "Belgium",
+    "region": "Europe",
+    "gdp": 529,
+    "population": 11589623,
+    "trade_volume": 820000
+  },
+  {
+    "id": "AR",
+    "name": "Argentina",
+    "region": "South America",
+    "gdp": 450,
+    "population": 45195774,
+    "trade_volume": 140000
+  },
+  {
+    "id": "SE",
+    "name": "Sweden",
+    "region": "Europe",
+    "gdp": 541,
+    "population": 10099265,
+    "trade_volume": 320000
+  },
+  {
+    "id": "PL",
+    "name": "Poland",
+    "region": "Europe",
+    "gdp": 595,
+    "population": 37846611,
+    "trade_volume": 520000
+  },
+  {
+    "id": "IE",
+    "name": "Ireland",
+    "region": "Europe",
+    "gdp": 426,
+    "population": 4937786,
+    "trade_volume": 380000
+  },
+  {
+    "id": "IL",
+    "name": "Israel",
+    "region": "Middle East",
+    "gdp": 395,
+    "population": 8655535,
+    "trade_volume": 120000
+  },
+  {
+    "id": "NO",
+    "name": "Norway",
+    "region": "Europe",
+    "gdp": 362,
+    "population": 5421241,
+    "trade_volume": 280000
+  },
+  {
+    "id": "AE",
+    "name": "United Arab Emirates",
+    "region": "Middle East",
+    "gdp": 421,
+    "population": 9890402,
+    "trade_volume": 450000
+  },
+  {
+    "id": "EG",
+    "name": "Egypt",
+    "region": "Africa",
+    "gdp": 365,
+    "population": 102334404,
+    "trade_volume": 85000
+  },
+  {
+    "id": "ZA",
+    "name": "South Africa",
+    "region": "Africa",
+    "gdp": 420,
+    "population": 59308690,
+    "trade_volume": 210000
+  },
+  {
+    "id": "TH",
+    "name": "Thailand",
+    "region": "Asia",
+    "gdp": 544,
+    "population": 69799978,
+    "trade_volume": 520000
+  },
+  {
+    "id": "MY",
+    "name": "Malaysia",
+    "region": "Asia",
+    "gdp": 365,
+    "population": 32365999,
+    "trade_volume": 490000
+  },
+  {
+    "id": "SG",
+    "name": "Singapore",
+    "region": "Asia",
+    "gdp": 340,
+    "population": 5850342,
+    "trade_volume": 780000
+  },
+  {
+    "id": "PH",
+    "name": "Philippines",
+    "region": "Asia",
+    "gdp": 377,
+    "population": 109581078,
+    "trade_volume": 190000
+  },
+  {
+    "id": "VN",
+    "name": "Vietnam",
+    "region": "Asia",
+    "gdp": 343,
+    "population": 97338579,
+    "trade_volume": 520000
+  },
+  {
+    "id": "BD",
+    "name": "Bangladesh",
+    "region": "Asia",
+    "gdp": 416,
+    "population": 164689383,
+    "trade_volume": 95000
+  },
+  {
+    "id": "NG",
+    "name": "Nigeria",
+    "region": "Africa",
+    "gdp": 448,
+    "population": 206139589,
+    "trade_volume": 130000
+  },
+  {
+    "id": "CL",
+    "name": "Chile",
+    "region": "South America",
+    "gdp": 282,
+    "population": 19116201,
+    "trade_volume": 160000
+  },
+  {
+    "id": "FI",
+    "name": "Finland",
+    "region": "Europe",
+    "gdp": 269,
+    "population": 5540720,
+    "trade_volume": 150000
+  },
+  {
+    "id": "RO",
+    "name": "Romania",
+    "region": "Europe",
+    "gdp": 250,
+    "population": 19237691,
+    "trade_volume": 160000
+  },
+  {
+    "id": "CZ",
+    "name": "Czech Republic",
+    "region": "Europe",
+    "gdp": 246,
+    "population": 10708981,
+    "trade_volume": 350000
+  },
+  {
+    "id": "NZ",
+    "name": "New Zealand",
+    "region": "Oceania",
+    "gdp": 206,
+    "population": 4822233,
+    "trade_volume": 85000
+  },
+  {
+    "id": "PE",
+    "name": "Peru",
+    "region": "South America",
+    "gdp": 203,
+    "population": 32971854,
+    "trade_volume": 95000
+  },
+  {
+    "id": "IQ",
+    "name": "Iraq",
+    "region": "Middle East",
+    "gdp": 234,
+    "population": 40222493,
+    "trade_volume": 120000
+  },
+  {
+    "id": "DK",
+    "name": "Denmark",
+    "region": "Europe",
+    "gdp": 349,
+    "population": 5792202,
+    "trade_volume": 280000
+  },
+  {
+    "id": "AT",
+    "name": "Austria",
+    "region": "Europe",
+    "gdp": 433,
+    "population": 9006398,
+    "trade_volume": 390000
+  },
+  {
+    "id": "PT",
+    "name": "Portugal",
+    "region": "Europe",
+    "gdp": 238,
+    "population": 10196709,
+    "trade_volume": 150000
+  },
+  {
+    "id": "GR",
+    "name": "Greece",
+    "region": "Europe",
+    "gdp": 188,
+    "population": 10423054,
+    "trade_volume": 85000
+  },
+  {
+    "id": "HU",
+    "name": "Hungary",
+    "region": "Europe",
+    "gdp": 163,
+    "population": 9660351,
+    "trade_volume": 240000
+  },
+  {
+    "id": "BG",
+    "name": "Bulgaria",
+    "region": "Europe",
+    "gdp": 69,
+    "population": 6948445,
+    "trade_volume": 65000
+  },
+  {
+    "id": "HR",
+    "name": "Croatia",
+    "region": "Europe",
+    "gdp": 60,
+    "population": 4105267,
+    "trade_volume": 45000
+  },
+  {
+    "id": "SI",
+    "name": "Slovenia",
+    "region": "Europe",
+    "gdp": 54,
+    "population": 2078938,
+    "trade_volume": 68000
+  },
+  {
+    "id": "SK",
+    "name": "Slovakia",
+    "region": "Europe",
+    "gdp": 106,
+    "population": 5459642,
+    "trade_volume": 165000
+  },
+  {
+    "id": "LT",
+    "name": "Lithuania",
+    "region": "Europe",
+    "gdp": 56,
+    "population": 2722289,
+    "trade_volume": 70000
+  },
+  {
+    "id": "LV",
+    "name": "Latvia",
+    "region": "Europe",
+    "gdp": 34,
+    "population": 1886198,
+    "trade_volume": 35000
+  },
+  {
+    "id": "EE",
+    "name": "Estonia",
+    "region": "Europe",
+    "gdp": 31,
+    "population": 1326535,
+    "trade_volume": 32000
+  },
+  {
+    "id": "LU",
+    "name": "Luxembourg",
+    "region": "Europe",
+    "gdp": 71,
+    "population": 625978,
+    "trade_volume": 42000
+  },
+  {
+    "id": "MT",
+    "name": "Malta",
+    "region": "Europe",
+    "gdp": 15,
+    "population": 441543,
+    "trade_volume": 12000
+  },
+  {
+    "id": "CY",
+    "name": "Cyprus",
+    "region": "Europe",
+    "gdp": 25,
+    "population": 1207359,
+    "trade_volume": 15000
+  },
+  {
+    "id": "IS",
+    "name": "Iceland",
+    "region": "Europe",
+    "gdp": 24,
+    "population": 341243,
+    "trade_volume": 12000
+  },
+  {
+    "id": "UY",
+    "name": "Uruguay",
+    "region": "South America",
+    "gdp": 56,
+    "population": 3473730,
+    "trade_volume": 18000
+  },
+  {
+    "id": "PY",
+    "name": "Paraguay",
+    "region": "South America",
+    "gdp": 40,
+    "population": 7132538,
+    "trade_volume": 25000
+  },
+  {
+    "id": "BO",
+    "name": "Bolivia",
+    "region": "South America",
+    "gdp": 41,
+    "population": 11673021,
+    "trade_volume": 18000
+  },
+  {
+    "id": "EC",
+    "name": "Ecuador",
+    "region": "South America",
+    "gdp": 108,
+    "population": 17643054,
+    "trade_volume": 45000
+  },
+  {
+    "id": "CO",
+    "name": "Colombia",
+    "region": "South America",
+    "gdp": 314,
+    "population": 50882891,
+    "trade_volume": 85000
+  },
+  {
+    "id": "VE",
+    "name": "Venezuela",
+    "region": "South America",
+    "gdp": 98,
+    "population": 28435940,
+    "trade_volume": 25000
+  },
+  {
+    "id": "GY",
+    "name": "Guyana",
+    "region": "South America",
+    "gdp": 7,
+    "population": 786552,
+    "trade_volume": 3500
+  },
+  {
+    "id": "SR",
+    "name": "Suriname",
+    "region": "South America",
+    "gdp": 4,
+    "population": 586632,
+    "trade_volume": 2800
+  },
+  {
+    "id": "TT",
+    "name": "Trinidad and Tobago",
+    "region": "North America",
+    "gdp": 22,
+    "population": 1399488,
+    "trade_volume": 15000
+  },
+  {
+    "id": "JM",
+    "name": "Jamaica",
+    "region": "North America",
+    "gdp": 16,
+    "population": 2961167,
+    "trade_volume": 8500
+  },
+  {
+    "id": "CR",
+    "name": "Costa Rica",
+    "region": "North America",
+    "gdp": 62,
+    "population": 5094118,
+    "trade_volume": 35000
+  },
+  {
+    "id": "PA",
+    "name": "Panama",
+    "region": "North America",
+    "gdp": 67,
+    "population": 4314767,
+    "trade_volume": 42000
+  },
+  {
+    "id": "GT",
+    "name": "Guatemala",
+    "region": "North America",
+    "gdp": 77,
+    "population": 17915568,
+    "trade_volume": 25000
+  },
+  {
+    "id": "HN",
+    "name": "Honduras",
+    "region": "North America",
+    "gdp": 25,
+    "population": 9904607,
+    "trade_volume": 12000
+  },
+  {
+    "id": "SV",
+    "name": "El Salvador",
+    "region": "North America",
+    "gdp": 27,
+    "population": 6486205,
+    "trade_volume": 15000
+  },
+  {
+    "id": "NI",
+    "name": "Nicaragua",
+    "region": "North America",
+    "gdp": 13,
+    "population": 6624554,
+    "trade_volume": 8000
+  },
+  {
+    "id": "BZ",
+    "name": "Belize",
+    "region": "North America",
+    "gdp": 2,
+    "population": 397628,
+    "trade_volume": 1800
+  },
+  {
+    "id": "CU",
+    "name": "Cuba",
+    "region": "North America",
+    "gdp": 103,
+    "population": 11326616,
+    "trade_volume": 15000
+  },
+  {
+    "id": "DO",
+    "name": "Dominican Republic",
+    "region": "North America",
+    "gdp": 89,
+    "population": 10847910,
+    "trade_volume": 28000
+  },
+  {
+    "id": "HT",
+    "name": "Haiti",
+    "region": "North America",
+    "gdp": 8,
+    "population": 11402528,
+    "trade_volume": 3500
+  },
+  {
+    "id": "KE",
+    "name": "Kenya",
+    "region": "Africa",
+    "gdp": 96,
+    "population": 53771296,
+    "trade_volume": 18000
+  },
+  {
+    "id": "ET",
+    "name": "Ethiopia",
+    "region": "Africa",
+    "gdp": 96,
+    "population": 114963588,
+    "trade_volume": 12000
+  },
+  {
+    "id": "UG",
+    "name": "Uganda",
+    "region": "Africa",
+    "gdp": 43,
+    "population": 45741007,
+    "trade_volume": 8500
+  },
+  {
+    "id": "TZ",
+    "name": "Tanzania",
+    "region": "Africa",
+    "gdp": 64,
+    "population": 59734218,
+    "trade_volume": 12000
+  },
+  {
+    "id": "RW",
+    "name": "Rwanda",
+    "region": "Africa",
+    "gdp": 10,
+    "population": 12952218,
+    "trade_volume": 2800
+  },
+  {
+    "id": "GH",
+    "name": "Ghana",
+    "region": "Africa",
+    "gdp": 67,
+    "population": 31072940,
+    "trade_volume": 18000
+  },
+  {
+    "id": "CI",
+    "name": "Ivory Coast",
+    "region": "Africa",
+    "gdp": 61,
+    "population": 26378274,
+    "trade_volume": 15000
+  },
+  {
+    "id": "SN",
+    "name": "Senegal",
+    "region": "Africa",
+    "gdp": 24,
+    "population": 16743927,
+    "trade_volume": 8500
+  },
+  {
+    "id": "MA",
+    "name": "Morocco",
+    "region": "Africa",
+    "gdp": 119,
+    "population": 36910560,
+    "trade_volume": 65000
+  },
+  {
+    "id": "TN",
+    "name": "Tunisia",
+    "region": "Africa",
+    "gdp": 39,
+    "population": 11818619,
+    "trade_volume": 25000
+  },
+  {
+    "id": "DZ",
+    "name": "Algeria",
+    "region": "Africa",
+    "gdp": 170,
+    "population": 43851044,
+    "trade_volume": 85000
+  },
+  {
+    "id": "LY",
+    "name": "Libya",
+    "region": "Africa",
+    "gdp": 25,
+    "population": 6871292,
+    "trade_volume": 18000
+  },
+  {
+    "id": "AO",
+    "name": "Angola",
+    "region": "Africa",
+    "gdp": 95,
+    "population": 32866272,
+    "trade_volume": 45000
+  },
+  {
+    "id": "ZM",
+    "name": "Zambia",
+    "region": "Africa",
+    "gdp": 23,
+    "population": 18383955,
+    "trade_volume": 15000
+  },
+  {
+    "id": "ZW",
+    "name": "Zimbabwe",
+    "region": "Africa",
+    "gdp": 21,
+    "population": 14862924,
+    "trade_volume": 8500
+  },
+  {
+    "id": "BW",
+    "name": "Botswana",
+    "region": "Africa",
+    "gdp": 18,
+    "population": 2351627,
+    "trade_volume": 12000
+  },
+  {
+    "id": "NA",
+    "name": "Namibia",
+    "region": "Africa",
+    "gdp": 12,
+    "population": 2540905,
+    "trade_volume": 8500
+  },
+  {
+    "id": "MW",
+    "name": "Malawi",
+    "region": "Africa",
+    "gdp": 7,
+    "population": 19129952,
+    "trade_volume": 2800
+  },
+  {
+    "id": "MZ",
+    "name": "Mozambique",
+    "region": "Africa",
+    "gdp": 15,
+    "population": 31255435,
+    "trade_volume": 8500
+  },
+  {
+    "id": "MG",
+    "name": "Madagascar",
+    "region": "Africa",
+    "gdp": 14,
+    "population": 27691018,
+    "trade_volume": 5500
+  },
+  {
+    "id": "MU",
+    "name": "Mauritius",
+    "region": "Africa",
+    "gdp": 14,
+    "population": 1271768,
+    "trade_volume": 12000
+  },
+  {
+    "id": "IR",
+    "name": "Iran",
+    "region": "Middle East",
+    "gdp": 191,
+    "population": 83992949,
+    "trade_volume": 120000
+  },
+  {
+    "id": "KW",
+    "name": "Kuwait",
+    "region": "Middle East",
+    "gdp": 135,
+    "population": 4270571,
+    "trade_volume": 95000
+  },
+  {
+    "id": "QA",
+    "name": "Qatar",
+    "region": "Middle East",
+    "gdp": 146,
+    "population": 2881053,
+    "trade_volume": 125000
+  },
+  {
+    "id": "BH",
+    "name": "Bahrain",
+    "region": "Middle East",
+    "gdp": 38,
+    "population": 1701575,
+    "trade_volume": 35000
+  },
+  {
+    "id": "OM",
+    "name": "Oman",
+    "region": "Middle East",
+    "gdp": 76,
+    "population": 5106626,
+    "trade_volume": 85000
+  },
+  {
+    "id": "JO",
+    "name": "Jordan",
+    "region": "Middle East",
+    "gdp": 44,
+    "population": 10203134,
+    "trade_volume": 25000
+  },
+  {
+    "id": "LB",
+    "name": "Lebanon",
+    "region": "Middle East",
+    "gdp": 19,
+    "population": 6825445,
+    "trade_volume": 15000
+  },
+  {
+    "id": "SY",
+    "name": "Syria",
+    "region": "Middle East",
+    "gdp": 20,
+    "population": 17500658,
+    "trade_volume": 8500
+  },
+  {
+    "id": "YE",
+    "name": "Yemen",
+    "region": "Middle East",
+    "gdp": 21,
+    "population": 29825964,
+    "trade_volume": 5500
+  },
+  {
+    "id": "AF",
+    "name": "Afghanistan",
+    "region": "Asia",
+    "gdp": 19,
+    "population": 38928346,
+    "trade_volume": 2800
+  },
+  {
+    "id": "PK",
+    "name": "Pakistan",
+    "region": "Asia",
+    "gdp": 263,
+    "population": 220892340,
+    "trade_volume": 85000
+  },
+  {
+    "id": "LK",
+    "name": "Sri Lanka",
+    "region": "Asia",
+    "gdp": 84,
+    "population": 21413249,
+    "trade_volume": 35000
+  },
+  {
+    "id": "NP",
+    "name": "Nepal",
+    "region": "Asia",
+    "gdp": 34,
+    "population": 29136808,
+    "trade_volume": 8500
+  },
+  {
+    "id": "BT",
+    "name": "Bhutan",
+    "region": "Asia",
+    "gdp": 2,
+    "population": 771608,
+    "trade_volume": 1200
+  },
+  {
+    "id": "MV",
+    "name": "Maldives",
+    "region": "Asia",
+    "gdp": 5,
+    "population": 540544,
+    "trade_volume": 2800
+  },
+  {
+    "id": "MM",
+    "name": "Myanmar",
+    "region": "Asia",
+    "gdp": 76,
+    "population": 54409800,
+    "trade_volume": 25000
+  },
+  {
+    "id": "KH",
+    "name": "Cambodia",
+    "region": "Asia",
+    "gdp": 25,
+    "population": 16718965,
+    "trade_volume": 18000
+  },
+  {
+    "id": "LA",
+    "name": "Laos",
+    "region": "Asia",
+    "gdp": 19,
+    "population": 7275560,
+    "trade_volume": 8500
+  },
+  {
+    "id": "BN",
+    "name": "Brunei",
+    "region": "Asia",
+    "gdp": 12,
+    "population": 437479,
+    "trade_volume": 15000
+  },
+  {
+    "id": "MN",
+    "name": "Mongolia",
+    "region": "Asia",
+    "gdp": 13,
+    "population": 3278290,
+    "trade_volume": 12000
+  },
+  {
+    "id": "KZ",
+    "name": "Kazakhstan",
+    "region": "Asia",
+    "gdp": 181,
+    "population": 18776707,
+    "trade_volume": 125000
+  },
+  {
+    "id": "UZ",
+    "name": "Uzbekistan",
+    "region": "Asia",
+    "gdp": 57,
+    "population": 33469203,
+    "trade_volume": 25000
+  },
+  {
+    "id": "KG",
+    "name": "Kyrgyzstan",
+    "region": "Asia",
+    "gdp": 8,
+    "population": 6524195,
+    "trade_volume": 3500
+  },
+  {
+    "id": "TJ",
+    "name": "Tajikistan",
+    "region": "Asia",
+    "gdp": 8,
+    "population": 9537645,
+    "trade_volume": 2800
+  },
+  {
+    "id": "TM",
+    "name": "Turkmenistan",
+    "region": "Asia",
+    "gdp": 41,
+    "population": 6031200,
+    "trade_volume": 18000
+  },
+  {
+    "id": "GE",
+    "name": "Georgia",
+    "region": "Europe",
+    "gdp": 16,
+    "population": 3989167,
+    "trade_volume": 8500
+  },
+  {
+    "id": "AM",
+    "name": "Armenia",
+    "region": "Europe",
+    "gdp": 13,
+    "population": 2963243,
+    "trade_volume": 5500
+  },
+  {
+    "id": "AZ",
+    "name": "Azerbaijan",
+    "region": "Europe",
+    "gdp": 48,
+    "population": 10139177,
+    "trade_volume": 25000
+  },
+  {
+    "id": "BY",
+    "name": "Belarus",
+    "region": "Europe",
+    "gdp": 60,
+    "population": 9449323,
+    "trade_volume": 85000
+  },
+  {
+    "id": "UA",
+    "name": "Ukraine",
+    "region": "Europe",
+    "gdp": 181,
+    "population": 43733762,
+    "trade_volume": 120000
+  },
+  {
+    "id": "MD",
+    "name": "Moldova",
+    "region": "Europe",
+    "gdp": 12,
+    "population": 4033963,
+    "trade_volume": 5500
+  },
+  {
+    "id": "RS",
+    "name": "Serbia",
+    "region": "Europe",
+    "gdp": 51,
+    "population
