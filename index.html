@@ -433,6 +433,15 @@
         /* TOOLTIP STYLES              */
         /* =========================== */
         
+        #mobile-tooltip {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 105;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
         .force-graph-tooltip {
             background: transparent !important;
             padding: 0 !important;
@@ -613,11 +622,11 @@
                 display: none; /* Hide matrix button on small screens */
             }
             #panel-container {
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 90vw;
-                max-height: 90vh;
+                top: 12px;
+                left: 12px;
+                right: 12px;
+                width: auto;
+                max-height: calc(100vh - 24px);
             }
             #control-panel {
                 width: 100%;
@@ -746,6 +755,7 @@
     </div>
 
     <div id="graph"></div>
+    <div id="mobile-tooltip" class="hidden"></div>
 
     <div id="matrix-overlay" class="hidden">
         <div id="matrix-container">
@@ -1259,7 +1269,11 @@
                     .nodeId('id')
                     .nodeVal(node => app.highlightNodes.has(node) ? 12 : 8)
                     .backgroundColor('#f8fafc')
-                    .linkColor(() => '#9ca3af')
+                    .linkColor(link => {
+                        const activeNodeCount = app.gData.nodes.filter(n => n.active).length;
+                        const opacity = activeNodeCount > 100 ? 0.1 : 0.6;
+                        return `rgba(156, 163, 175, ${opacity})`;
+                    })
                     .linkCurvature(0.2)
                     .linkDirectionalArrowLength(6)
                     .linkDirectionalArrowRelPos(1)
