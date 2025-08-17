@@ -471,7 +471,7 @@
         }
 
         /* =========================== */
-        /* MATRIX PLOT STYLES          */
+        /* MATRIX PLOT STYLES (IMAGE-BASED) */
         /* =========================== */
 
         #top-right-controls {
@@ -513,7 +513,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px;
+            padding: 24px;
         }
 
         #matrix-container {
@@ -522,9 +522,11 @@
             padding: 24px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             position: relative;
-            max-width: 80vw;
-            max-height: 80vh;
-            overflow: auto;
+            max-width: 90vmin;
+            max-height: 90vmin;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         
         #matrix-title {
@@ -533,6 +535,8 @@
             color: #111827;
             margin: 0 0 16px 0;
             padding-right: 30px;
+            flex-shrink: 0;
+            align-self: flex-start;
         }
 
         #matrix-close-btn {
@@ -553,23 +557,49 @@
             background: #e5e7eb;
             color: #111827;
         }
-
-        #matrix-plot {
-            display: grid;
+        
+        #matrix-canvas-container {
+            flex-grow: 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
             border: 1px solid #e5e7eb;
+            border-radius: 8px;
         }
 
-        .matrix-cell {
-            width: 3px;
-            height: 3px;
+        #matrix-canvas {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
-
+        
+        #matrix-legend {
+            margin-top: 12px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            width: 100%;
+        }
+        #legend-gradient {
+            height: 12px;
+            flex-grow: 1;
+            border-radius: 6px;
+        }
+        
         /* =========================== */
         /* SCROLLBAR STYLES            */
         /* =========================== */
         
         ::-webkit-scrollbar {
             width: 4px;
+            height: 4px;
         }
 
         ::-webkit-scrollbar-track {
@@ -685,9 +715,16 @@
 
     <div id="matrix-overlay" class="hidden">
         <div id="matrix-container">
-            <h3 id="matrix-title">Adjacency Matrix Heatmap</h3>
+            <h3 id="matrix-title">Adjacency Matrix: <span id="matrix-category-name"></span></h3>
             <button id="matrix-close-btn">&times;</button>
-            <div id="matrix-plot"></div>
+            <div id="matrix-canvas-container">
+                <canvas id="matrix-canvas"></canvas>
+            </div>
+            <div id="matrix-legend">
+                <span id="legend-min">0</span>
+                <div id="legend-gradient"></div>
+                <span id="legend-max">0</span>
+            </div>
         </div>
     </div>
 
@@ -861,7 +898,6 @@
 
             populatePartnershipSelector() {
                 const select = document.getElementById('partnership-select');
-                // FIX: Add a disabled "Custom" option for when the selection doesn't match a preset.
                 select.innerHTML = '<option value="custom" disabled>Custom Selection</option>';
                 for (const partnershipName in this.partnerships) {
                     const option = document.createElement('option');
@@ -906,49 +942,75 @@
             },
 
             renderAdjacencyMatrix() {
-                const plot = document.getElementById('matrix-plot');
-                const nodes = Array.from(this.nodeMap.values());
-                const nodeIndexMap = new Map(nodes.map((node, i) => [node.id, i]));
-                const size = nodes.length;
+                const canvas = document.getElementById('matrix-canvas');
+                const ctx = canvas.getContext('2d');
 
-                if (!plot || size === 0) {
-                    console.warn("Matrix plot not rendered: No data or element not found.");
+                const category = document.getElementById('product-category-select').value;
+                document.getElementById('matrix-category-name').textContent = category;
+
+                const activeNodes = Array.from(this.nodeMap.values())
+                    .filter(n => n.active)
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                
+                const nodeIndexMap = new Map(activeNodes.map((node, i) => [node.id, i]));
+                const size = activeNodes.length;
+
+                if (!canvas || size === 0) {
+                    if(canvas) {
+                        canvas.width = 1;
+                        canvas.height = 1;
+                        ctx.clearRect(0, 0, 1, 1);
+                    }
                     return;
                 }
                 
+                canvas.width = size;
+                canvas.height = size;
+                
                 this.adjacencyMatrix = Array(size).fill(0).map(() => Array(size).fill(0));
                 this.gData.links.forEach(link => {
-                    const sourceIndex = nodeIndexMap.get(link.source);
-                    const targetIndex = nodeIndexMap.get(link.target);
+                    const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                    const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+                    const sourceIndex = nodeIndexMap.get(sourceId);
+                    const targetIndex = nodeIndexMap.get(targetId);
                     if (sourceIndex !== undefined && targetIndex !== undefined) {
-                        this.adjacencyMatrix[sourceIndex][targetIndex] = link.value || 1;
+                        this.adjacencyMatrix[sourceIndex][targetIndex] = (link.value || 1) / 1000000; // Convert to millions
                     }
                 });
 
-                plot.innerHTML = '';
-                plot.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-                let maxVal = Math.max(...this.adjacencyMatrix.flat().filter(v => typeof v === 'number'));
-                if (maxVal === -Infinity) maxVal = 0;
+                const values = this.adjacencyMatrix.flat().filter(v => v > 0);
+                const maxVal = Math.max(...values, 0);
+                const minVal = Math.min(...values, 1);
 
-                const startColor = [237, 233, 254]; // violet-100
-                const endColor = [76, 29, 149];   // violet-900 
+                const startColor = [240, 249, 255]; // sky-50
+                const endColor = [12, 74, 110];   // sky-900
 
-                for (let i = 0; i < size; i++) {
-                    for (let j = 0; j < size; j++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'matrix-cell';
-                        const value = this.adjacencyMatrix[i]?.[j] || 0;
-                        const ratio = maxVal > 0 ? value / maxVal : 0;
-                        
-                        const r = Math.round(startColor[0] + ratio * (endColor[0] - startColor[0]));
-                        const g = Math.round(startColor[1] + ratio * (endColor[1] - startColor[1]));
-                        const b = Math.round(startColor[2] + ratio * (endColor[2] - startColor[2]));
+                const imageData = ctx.createImageData(size, size);
 
-                        cell.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-                        cell.title = `${nodes[i]?.name} -> ${nodes[j]?.name}: ${value}`;
-                        plot.appendChild(cell);
+                for (let i = 0; i < size; i++) { // Row (y-axis)
+                    for (let j = 0; j < size; j++) { // Column (x-axis)
+                        const value = this.adjacencyMatrix[i][j];
+                        const pixelIndex = (i * size + j) * 4;
+
+                        if (value > 0) {
+                            const logRatio = Math.log(value) / Math.log(maxVal || 1);
+                            imageData.data[pixelIndex] = Math.round(startColor[0] + logRatio * (endColor[0] - startColor[0]));     // R
+                            imageData.data[pixelIndex + 1] = Math.round(startColor[1] + logRatio * (endColor[1] - startColor[1])); // G
+                            imageData.data[pixelIndex + 2] = Math.round(startColor[2] + logRatio * (endColor[2] - startColor[2])); // B
+                            imageData.data[pixelIndex + 3] = 255; // Alpha
+                        } else {
+                            imageData.data[pixelIndex] = 241;     // R (bg color #f1f5f9)
+                            imageData.data[pixelIndex + 1] = 245; // G
+                            imageData.data[pixelIndex + 2] = 249; // B
+                            imageData.data[pixelIndex + 3] = 255; // Alpha
+                        }
                     }
                 }
+                ctx.putImageData(imageData, 0, 0);
+                
+                document.getElementById('legend-min').textContent = `${minVal.toFixed(1)}M`;
+                document.getElementById('legend-max').textContent = `${maxVal.toFixed(1)}M`;
+                document.getElementById('legend-gradient').style.background = `linear-gradient(to right, rgb(${startColor.join(',')}), rgb(${endColor.join(',')}))`;
             },
 
             normalizeValue(value, minInput, maxInput, minOutput, maxOutput) {
@@ -999,8 +1061,6 @@
                     return activeNodeIds.has(sourceId) && activeNodeIds.has(targetId);
                 });
 
-                // FIX: Pass a deep copy of the data to the graph library to prevent it from
-                // mutating the master data source (`gData`), which was causing inconsistent edge recovery.
                 const clonedNodes = activeNodes.map(n => ({...n}));
                 const clonedLinks = activeLinks.map(l => ({...l}));
 
@@ -1021,10 +1081,9 @@
                 this.updateMetrics();
                 this.updateCountryButtons();
                 this.updateLegend();
-                this.updatePartnershipSelectorState(); // FIX: Update dropdown on UI changes.
+                this.updatePartnershipSelectorState();
             },
             
-            // FIX: New function to synchronize the partnership dropdown with the current node selection.
             updatePartnershipSelectorState() {
                 const select = document.getElementById('partnership-select');
                 const activeNodeIds = new Set(
@@ -1037,7 +1096,6 @@
 
                 for (const [name, ids] of Object.entries(this.partnerships)) {
                     const partnershipIds = new Set(ids);
-                    // Check if the size is the same and every active ID is in the partnership set.
                     if (activeNodeIds.size === partnershipIds.size && [...activeNodeIds].every(id => partnershipIds.has(id))) {
                         matchedPartnership = name;
                         break;
@@ -1075,7 +1133,7 @@
                 container.innerHTML = '';
                 Array.from(this.nodeMap.values())
                     .filter(c => c.name.toLowerCase().includes(searchValue))
-                    .sort((a, b) => a.name.localeCompare(b.name)) // Sort alphabetically
+                    .sort((a, b) => a.name.localeCompare(b.name))
                     .forEach(country => {
                         const button = document.createElement('button');
                         button.className = `country-toggle ${country.active ? 'active' : 'inactive'}`;
@@ -1092,6 +1150,7 @@
                 }
                 this.updateUI();
                 this.updateGraphData();
+                this.renderAdjacencyMatrix(); // Re-render matrix on country change
             },
 
             updateLegend() {
@@ -1140,8 +1199,8 @@
                     });
                 }
             },
-            selectAll() { this.nodeMap.forEach(c => c.active = true); this.updateUI(); this.updateGraphData(); },
-            selectNone() { this.nodeMap.forEach(c => c.active = false); this.updateUI(); this.updateGraphData(); },
+            selectAll() { this.nodeMap.forEach(c => c.active = true); this.updateUI(); this.updateGraphData(); this.renderAdjacencyMatrix(); },
+            selectNone() { this.nodeMap.forEach(c => c.active = false); this.updateUI(); this.updateGraphData(); this.renderAdjacencyMatrix(); },
             
             selectPartnership(partnershipName) {
                 const partnershipCountries = new Set(this.partnerships[partnershipName]);
@@ -1150,6 +1209,7 @@
                 });
                 this.updateUI();
                 this.updateGraphData();
+                this.renderAdjacencyMatrix();
             },
 
             initializeGraph() {
@@ -1157,7 +1217,7 @@
                 const container = document.getElementById('graph');
                 
                 this.graph = ForceGraph()(container)
-                    .graphData({ nodes: [], links: [] }) // Start with empty graph
+                    .graphData({ nodes: [], links: [] })
                     .nodeId('id')
                     .nodeVal(node => this.highlightNodes.has(node) ? 12 : 8)
                     .backgroundColor('#f8fafc')
