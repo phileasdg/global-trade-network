@@ -135,8 +135,21 @@
             color: #6b7280;
             line-height: 1.4;
             transition: all 0.3s ease;
-            /* Make space for new icon button */
-            padding-right: 110px;
+            /* Make space for new icon button - REMOVED for better text flow */
+            /* padding-right: 110px; */
+        }
+
+        /* --- NEW: Link style for subtitle --- */
+        .subtitle-link {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 1px dotted #6b7280;
+            transition: all 0.2s ease;
+        }
+        .subtitle-link:hover {
+            color: #3b82f6;
+            border-bottom-style: solid;
+            border-bottom-color: #3b82f6;
         }
 
         /* Toggle Button */
@@ -728,7 +741,7 @@
             
             <h1 id="title">Global Trade Network</h1>
             <!-- --- EDITED: New Subtitle --- -->
-            <p id="subtitle">A network analysis project from the 2025 Complexity Global School (SFI & Uniandes).</p>
+            <p id="subtitle">A network analysis project from the <a href="https://santafe.edu/info/2025-complexity-global-school/overview" target="_blank" rel="noopener noreferrer" class="subtitle-link">2025 Complexity Global School (SFI & Uniandes)</a>.</p>
             
             <div id="panel-content">
                 <div class="section hide-on-collapse">
@@ -860,6 +873,7 @@
             nodeMap: new Map(),
             adjacencyMatrix: [],
             flagImageCache: {}, // Cache for flag images
+            linkMinMax: { min: 0, max: 0 }, // <-- ADDED
             
             // State for highlighting
             highlightNodes: new Set(),
@@ -1333,6 +1347,20 @@
                     return activeNodeIds.has(sourceId) && activeNodeIds.has(targetId);
                 });
 
+                // --- NEW: Calculate min/max link values ---
+                if (activeLinks.length > 0) {
+                    let min = Infinity;
+                    let max = -Infinity;
+                    for (const link of activeLinks) {
+                        if (link.value < min) min = link.value;
+                        if (link.value > max) max = link.value;
+                    }
+                    app.linkMinMax = { min, max };
+                } else {
+                    app.linkMinMax = { min: 0, max: 0 };
+                }
+                // --- END NEW ---
+
                 const clonedNodes = activeNodes.map(n => ({...n}));
                 const clonedLinks = activeLinks.map(l => ({...l}));
 
@@ -1586,7 +1614,33 @@
                         }
                         app.hoverNode = node || null;
                     })
-                    .linkWidth(link => app.highlightLinks.has(link) ? 4 : 1)
+                    .linkWidth(link => {
+                        if (app.highlightLinks.has(link)) return 4; // Keep hover highlight strong
+
+                        const activeNodeCount = app.graph.graphData().nodes.length;
+                        
+                        // If too many nodes (e.g., > 50), just use a thin line
+                        if (activeNodeCount > 50) {
+                            return 0.5; 
+                        }
+
+                        // If few nodes, scale the width
+                        const { min, max } = app.linkMinMax;
+                        const minDisplayWidth = 0.5;
+                        const maxDisplayWidth = 5; // Max width for a link
+
+                        if (min === max) return minDisplayWidth; // Avoid division by zero
+
+                        // Use logarithmic scaling for better visual differentiation
+                        const logMin = Math.log(min || 1);
+                        const logMax = Math.log(max || 1);
+                        const logVal = Math.log(link.value || 1);
+
+                        if (logMin === logMax) return minDisplayWidth;
+                        
+                        // Use app.normalizeValue on the log-transformed values
+                        return app.normalizeValue(logVal, logMin, logMax, minDisplayWidth, maxDisplayWidth);
+                    })
                     .linkDirectionalParticles(link => app.highlightLinks.has(link) ? 2 : 0)
                     .linkDirectionalParticleWidth(link => app.highlightLinks.has(link) ? 3 : 0)
                     .nodeLabel(node => {
@@ -1600,7 +1654,7 @@
                             <div class="tooltip-country">${authoritativeNode.name}</div>`;
                         
                         // Define which keys to show and in what order
-                        const keysToShow = ['degree', 'closeness', 'betweenness', 'trade_volume', 'region'];
+                        const keysToShow = ['degree', 'closeness', 'betweenness', 'trade_volume']; // <-- REMOVED 'region'
 
                         for (const key of keysToShow) {
                             const value = authoritativeNode[key];
