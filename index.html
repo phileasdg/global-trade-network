@@ -30,7 +30,7 @@
         }
 
         /* =========================== */
-        /* LOADING OVERLAY             */
+        /* LOADING OVERLAY           */
         /* =========================== */
         #loading-overlay {
             position: fixed;
@@ -219,7 +219,7 @@
         
         #metrics {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr); /* MODIFIED: Changed from 1fr 1fr */
             gap: 8px;
             margin-bottom: 12px;
         }
@@ -676,7 +676,7 @@
             <div id="panel-content">
                 <div class="section hide-on-collapse">
                     <h3>Network Metrics</h3>
-                    <p class="section-description">Key measures of network structure</p>
+                    <p class="section-description">Key measures of the active network structure</p>
                     <div id="metrics">
                         <div class="metric-card">
                             <div class="metric-value" id="active-countries">0</div>
@@ -690,10 +690,7 @@
                             <div class="metric-value" id="network-density">0.000</div>
                             <div class="metric-label">Density</div>
                         </div>
-                        <div class="metric-card">
-                            <div class="metric-value" id="modularity">0.000</div>
-                            <div class="metric-label">Modularity</div>
-                        </div>
+                        <!-- REMOVED: Modularity metric card -->
                     </div>
                 </div>
 
@@ -703,6 +700,7 @@
                     <select id="product-category-select"></select>
                 </div>
 
+                <!-- UPDATED: Removed extra view option buttons -->
                 <div class="section hide-on-collapse">
                     <h3>View Options</h3>
                     <p class="section-description">Choose how to visualize the network</p>
@@ -710,16 +708,6 @@
                         <button class="view-btn" data-view="degree" onclick="app.setView('degree')">Degree</button>
                         <button class="view-btn" data-view="betweenness" onclick="app.setView('betweenness')">Between</button>
                         <button class="view-btn active" data-view="closeness" onclick="app.setView('closeness')">Close</button>
-                    </div>
-                    <div class="view-controls">
-                        <button class="view-btn" data-view="eigenvector" onclick="app.setView('eigenvector')">Eigen</button>
-                        <button class="view-btn" data-view="pagerank" onclick="app.setView('pagerank')">PageRank</button>
-                        <button class="view-btn" data-view="gdp" onclick="app.setView('gdp')">GDP</button>
-                    </div>
-                     <div class="view-controls">
-                        <button class="view-btn" data-view="population" onclick="app.setView('population')">Population</button>
-                        <button class="view-btn" data-view="trade_volume" onclick="app.setView('trade_volume')">Volume</button>
-                        <button class="view-btn" data-view="region" onclick="app.setView('region')">Region</button>
                     </div>
                     <div class="view-controls" style="margin-top: 12px;">
                         <button id="flag-toggle-btn" class="view-btn active">Toggle Flags</button>
@@ -795,6 +783,8 @@
             viewMinMax: {},
             productCategories: [],
             showFlags: true,
+            density: 0,
+            // REMOVED: modularity: 0,
 
             partnerships: {
                 "BRICS": ["C076", "C643", "C356", "C156", "C710"],
@@ -808,14 +798,10 @@
                 "Asia": "#f59e0b", "Oceania": "#06b6d4", "Middle East": "#d97706", "Africa": "#84cc16"
             },
             centralityColors: {
+                // MODIFIED: Removed unused color schemes
                 degree: { high: '#8b5cf6', medium: '#a78bfa', low: '#c4b5fd' },
                 betweenness: { high: '#ef4444', medium: '#f87171', low: '#fca5a5' },
                 closeness: { high: '#10b981', medium: '#34d399', low: '#6ee7b7' },
-                eigenvector: { high: '#f59e0b', medium: '#fbbf24', low: '#fde047' },
-                pagerank: { high: '#3b82f6', medium: '#60a5fa', low: '#93c5fd' },
-                gdp: { high: '#dc2626', medium: '#f97316', low: '#84cc16' },
-                population: { high: '#ec4899', medium: '#f472b6', low: '#f9a8d4' },
-                trade_volume: { high: '#06b6d4', medium: '#22d3ee', low: '#67e8f9' }
             },
 
             async fetchJSON(url) {
@@ -846,7 +832,7 @@
                 if (app.productCategories.length > 0) {
                     const defaultCategory = app.productCategories.includes("All Products") ? "All Products" : app.productCategories[0];
                     await app.switchNetwork(defaultCategory);
-                    app.selectPartnership("BRICS");
+                    app.selectPartnership("BRICS"); // This will trigger the first metric computation
                 } else {
                     console.error("No product categories loaded. Cannot initialize network.");
                     document.getElementById('loading-text').textContent = 'Error: product-categories.json not found or is empty.';
@@ -894,13 +880,22 @@
                         throw new Error(`Edge list for "${category}" could not be loaded. Check if the file exists at: ${filePath}`);
                     }
 
+                    // Reset node metrics on the master list
+                    app.nodeMap.forEach(node => {
+                        Object.assign(node, {
+                            degree: 0,
+                            closeness: 0,
+                            betweenness: 0
+                        });
+                    });
+
                     edgeList.forEach(edge => {
                         const [sourceId, targetId] = edge;
                         if (!app.nodeMap.has(sourceId)) {
-                            app.nodeMap.set(sourceId, { id: sourceId, name: `Country ${sourceId}`, active: true, region: 'Unknown' });
+                            app.nodeMap.set(sourceId, { id: sourceId, name: `Country ${sourceId}`, active: true, region: 'Unknown', degree: 0, closeness: 0, betweenness: 0 });
                         }
                         if (!app.nodeMap.has(targetId)) {
-                            app.nodeMap.set(targetId, { id: targetId, name: `Country ${targetId}`, active: true, region: 'Unknown' });
+                            app.nodeMap.set(targetId, { id: targetId, name: `Country ${targetId}`, active: true, region: 'Unknown', degree: 0, closeness: 0, betweenness: 0 });
                         }
                     });
 
@@ -912,10 +907,14 @@
                     });
                     app.gData.links = links;
                     
-                    app.precomputeCentrality();
-                    app.renderAdjacencyMatrix();
-                    app.updateGraphData();
+                    // --- START FIX ---
+                    // We must update the UI and Graph data after switching networks.
+                    // The updateUI() function will trigger the re-computation of all metrics
+                    // for the new active graph.
                     app.updateUI();
+                    app.updateGraphData();
+                    // --- END FIX ---
+
                 } catch (error) {
                     console.error(`Failed to switch network to ${category}:`, error);
                     document.getElementById('graph').innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
@@ -953,28 +952,152 @@
                 }
             },
 
-            precomputeCentrality() {
-                const nodes = Array.from(app.nodeMap.values());
-                const n = nodes.length;
-                if (n === 0) return;
-
-                const degree = new Map();
-                nodes.forEach(node => degree.set(node.id, 0));
-
-                app.gData.links.forEach(link => {
-                    degree.set(link.source, degree.get(link.source) + 1);
-                    degree.set(link.target, degree.get(link.target) + 1);
+            /**
+             * NEW: This function computes all metrics for the *active* subgraph.
+             * It is computationally intensive and is called by updateUI.
+             */
+            recomputeMetrics() {
+                const activeNodes = Array.from(app.nodeMap.values()).filter(n => n.active);
+                const activeNodeIds = new Set(activeNodes.map(n => n.id));
+                const activeLinks = app.gData.links.filter(l => {
+                    const sourceId = typeof l.source === 'object' && l.source !== null ? l.source.id : l.source;
+                    const targetId = typeof l.target === 'object' && l.target !== null ? l.target.id : l.target;
+                    return activeNodeIds.has(sourceId) && activeNodeIds.has(targetId);
                 });
 
+                const N = activeNodes.length;
+                const M = activeLinks.length;
+
+                // 1. Reset metrics on master nodes
                 app.nodeMap.forEach(node => {
-                    Object.assign(node, {
-                        degree: degree.get(node.id) || 0,
-                        closeness: Math.random(),
-                        betweenness: Math.random(),
-                        eigenvector: Math.random(),
-                        pagerank: Math.random()
-                    });
+                    node.degree = 0;
+                    node.closeness = 0;
+                    node.betweenness = 0;
                 });
+
+                if (N === 0) {
+                    app.density = 0;
+                    // REMOVED: app.modularity = 0;
+                    return; // No nodes, nothing to compute
+                }
+
+                // 2. Build Adjacency Lists and Calculate Degree
+                const adjList = new Map(); // Directed for BFS
+                
+                // --- START EDIT: Replace undirected-specific maps ---
+                // REMOVED: const adjSet = new Set(); // For Modularity A_ij check
+                const inDegree = new Map();
+                const outDegree = new Map();
+                // --- END EDIT ---
+                const totalDirectedDegree = new Map();
+
+
+                activeNodes.forEach(node => {
+                    adjList.set(node.id, []);
+                    // --- START EDIT: Initialize new degree maps ---
+                    inDegree.set(node.id, 0);
+                    outDegree.set(node.id, 0);
+                    // --- END EDIT ---
+                    totalDirectedDegree.set(node.id, 0);
+                });
+
+                activeLinks.forEach(link => {
+                    const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+                    const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+                    
+                    // Directed list for BFS
+                    adjList.get(sourceId).push(targetId);
+
+                    // --- START EDIT: Calculate In/Out Degrees and Adjacency Set ---
+                    // REMOVED: adjSet.add(`${sourceId},${targetId}`);
+
+                    // For Modularity & Degree (Out)
+                    outDegree.set(sourceId, outDegree.get(sourceId) + 1);
+
+                    // For Modularity & Degree (In)
+                    inDegree.set(targetId, inDegree.get(targetId) + 1);
+                    // --- END EDIT ---
+                });
+
+                // --- START EDIT: Store total directed degree on master nodes for tooltips/coloring ---
+                // Calculate Total Degree (for tooltip/coloring) and store on master nodes
+                activeNodes.forEach(node => {
+                    const totalDeg = (inDegree.get(node.id) || 0) + (outDegree.get(node.id) || 0);
+                    totalDirectedDegree.set(node.id, totalDeg); // Keep this for the other degree calculation
+                    if (app.nodeMap.has(node.id)) {
+                        app.nodeMap.get(node.id).degree = totalDeg;
+                    }
+                });
+                // --- END EDIT ---
+
+                // 3. Calculate Density
+                app.density = N > 1 ? (M / (N * (N - 1))) : 0; // Density for directed graph
+
+                // 4. Calculate Closeness and Betweenness (Brandes' Algorithm)
+                const betweenness = new Map(activeNodes.map(n => [n.id, 0]));
+                const closeness = new Map(activeNodes.map(n => [n.id, 0]));
+
+                for (const node of activeNodes) {
+                    const s = node.id;
+                    const S = []; // Stack
+                    const P = new Map(activeNodes.map(n => [n.id, []])); // Predecessors
+                    const sigma = new Map(activeNodes.map(n => [n.id, 0]));
+                    const d = new Map(activeNodes.map(n => [n.id, -1]));
+
+                    sigma.set(s, 1);
+                    d.set(s, 0);
+                    
+                    const Q = [s];
+                    let totalDistance = 0;
+                    let reachableNodes = 0;
+
+                    while (Q.length > 0) {
+                        const v = Q.shift();
+                        S.push(v);
+                        
+                        for (const w of adjList.get(v) || []) {
+                            if (d.get(w) < 0) { // Not visited
+                                Q.push(w);
+                                d.set(w, d.get(v) + 1);
+                                totalDistance += d.get(w);
+                                reachableNodes++;
+                            }
+                            if (d.get(w) === d.get(v) + 1) { // Shortest path
+                                sigma.set(w, sigma.get(w) + sigma.get(v));
+                                P.get(w).push(v);
+                            }
+                        }
+                    }
+
+                    // Closeness Centrality (Harmonic Mean)
+                    // Use totalDistance (sum of all shortest paths)
+                    closeness.set(s, (reachableNodes > 0) ? (reachableNodes / totalDistance) : 0);
+
+                    // Betweenness Centrality Accumulation
+                    const delta = new Map(activeNodes.map(n => [n.id, 0]));
+                    while (S.length > 0) {
+                        const w = S.pop();
+                        for (const v of P.get(w) || []) {
+                            const c = (sigma.get(v) / sigma.get(w)) * (1 + delta.get(w));
+                            delta.set(v, delta.get(v) + c);
+                        }
+                        if (w !== s) {
+                            betweenness.set(w, betweenness.get(w) + delta.get(w));
+                        }
+                    }
+                }
+
+                // Normalize and store Betweenness & Closeness
+                const normalizationFactor = (N - 1) * (N - 2);
+                betweenness.forEach((val, id) => {
+                    const node = app.nodeMap.get(id);
+                    if (node) {
+                        node.betweenness = (normalizationFactor > 0) ? (val / normalizationFactor) : 0;
+                        node.closeness = closeness.get(id) || 0;
+                    }
+                });
+
+                // REMOVED: Section 5. Calculate Modularity
             },
 
             setupEventListeners() {
@@ -1105,25 +1228,47 @@
                 document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
                 document.querySelector(`.view-btn[data-view='${viewType}']`)?.classList.add('active');
                 app.updateLegend();
-                app.updateMetrics();
+                // app.updateMetrics(); // This is now handled by updateUI
                 app.graph.nodeCanvasObject(app.graph.nodeCanvasObject()); // Re-render nodes
             },
 
+            /**
+             * MODIFIED: This is now the main update function.
+             * It triggers re-computation and then updates all UI components.
+             */
             updateUI() {
-                app.updateViewMinMax();
-                app.updateMetrics();
-                app.updateCountryButtons();
-                app.updateLegend();
-                app.updatePartnershipSelectorState();
+                document.getElementById('loading-overlay').classList.remove('hidden');
+                document.getElementById('loading-text').textContent = `Calculating Metrics...`;
+
+                // Use a timeout to allow the loading screen to render before blocking the main thread
+                setTimeout(() => {
+                    try {
+                        app.recomputeMetrics(); // This is the new, slow part
+                        app.updateViewMinMax(); // This now uses the *real* values
+                        app.updateMetrics(); // This now just updates the DOM
+                        app.updateCountryButtons();
+                        app.updateLegend();
+                        app.updatePartnershipSelectorState();
+                        app.renderAdjacencyMatrix(); // Re-render matrix on country change
+                    } catch (error) {
+                        console.error("Error during UI update:", error);
+                    } finally {
+                        document.getElementById('loading-overlay').classList.add('hidden');
+                    }
+                }, 10);
             },
 
             updateViewMinMax() {
-                Object.keys(app.centralityColors).concat(['gdp', 'population', 'trade_volume']).forEach(view => {
+                // MODIFIED: Only check views that are still present
+                const viewsToUpdate = ['degree', 'betweenness', 'closeness'];
+                
+                viewsToUpdate.forEach(view => {
                     app.viewMinMax[view] = { min: Infinity, max: -Infinity };
                 });
+
                 app.nodeMap.forEach(c => {
                     if (c.active) {
-                        for(const view of Object.keys(app.viewMinMax)) {
+                        for(const view of viewsToUpdate) {
                             const val = c[view];
                             if (val < app.viewMinMax[view].min) app.viewMinMax[view].min = val;
                             if (val > app.viewMinMax[view].max) app.viewMinMax[view].max = val;
@@ -1157,6 +1302,9 @@
                 }
             },
 
+            /**
+             * MODIFIED: This function now *only* updates the DOM with pre-computed values.
+             */
             updateMetrics() {
                 const activeNodes = Array.from(app.nodeMap.values()).filter(c => c.active);
                 const numNodes = activeNodes.length;
@@ -1166,13 +1314,14 @@
                     const targetId = typeof l.target === 'object' && l.target !== null ? l.target.id : l.target;
                     return activeNodeIds.has(sourceId) && activeNodeIds.has(targetId);
                 }).length;
-                const density = numNodes > 1 ? numLinks / (numNodes * (numNodes - 1)) : 0;
-                const modularity = Math.random() * 0.4 + 0.2; // Placeholder
-                Object.entries({
-                    'active-countries': numNodes, 'trade-links': numLinks,
-                    'network-density': density.toFixed(3), 'modularity': modularity.toFixed(3),
-                    'active-count': numNodes, 'link-count': numLinks
-                }).forEach(([id, value]) => { document.getElementById(id).textContent = value; });
+                
+                // Read pre-computed values from app state
+                document.getElementById('active-countries').textContent = numNodes;
+                document.getElementById('trade-links').textContent = numLinks;
+                document.getElementById('network-density').textContent = app.density.toFixed(3);
+                // REMOVED: document.getElementById('modularity').textContent = app.modularity.toFixed(3);
+                document.getElementById('active-count').textContent = numNodes;
+                document.getElementById('link-count').textContent = numLinks;
             },
 
             updateCountryButtons() {
@@ -1196,9 +1345,8 @@
                 if (node) {
                     node.active = !node.active;
                 }
-                app.updateUI();
+                app.updateUI(); // Triggers re-computation
                 app.updateGraphData();
-                app.renderAdjacencyMatrix(); // Re-render matrix on country change
             },
 
             updateLegend() {
@@ -1209,6 +1357,8 @@
                 existingItems.forEach(item => item.remove());
                 
                 if (app.currentView === 'region') {
+                    // This view is no longer selectable, but we'll leave the logic
+                    // in case you want to add it back.
                     titleElement.textContent = 'Region';
                     Object.entries(app.regionColors).forEach(([region, color]) => {
                         const legendItem = document.createElement('div');
@@ -1230,7 +1380,7 @@
                         if (typeof val !== 'number' || !isFinite(val)) return 'N/A';
                         if (val > 1e6) return `${(val / 1e6).toFixed(1)}M`;
                         if (val > 1e3) return `${(val / 1e3).toFixed(1)}K`;
-                        return val.toFixed(2);
+                        return val.toFixed(3); // Increase precision for centrality
                     }
 
                     const legendData = [
@@ -1247,17 +1397,16 @@
                     });
                 }
             },
-            selectAll() { app.nodeMap.forEach(c => c.active = true); app.updateUI(); app.updateGraphData(); app.renderAdjacencyMatrix(); },
-            selectNone() { app.nodeMap.forEach(c => c.active = false); app.updateUI(); app.updateGraphData(); app.renderAdjacencyMatrix(); },
+            selectAll() { app.nodeMap.forEach(c => c.active = true); app.updateUI(); app.updateGraphData(); },
+            selectNone() { app.nodeMap.forEach(c => c.active = false); app.updateUI(); app.updateGraphData(); },
             
             selectPartnership(partnershipName) {
                 const partnershipCountries = new Set(app.partnerships[partnershipName]);
                 app.nodeMap.forEach((node, id) => {
                     node.active = partnershipCountries.has(id);
                 });
-                app.updateUI();
+                app.updateUI(); // Triggers re-computation
                 app.updateGraphData();
-                app.renderAdjacencyMatrix();
             },
 
             initializeGraph() {
@@ -1331,8 +1480,9 @@
 
                                 if (sourceId === node.id || targetId === node.id) {
                                     app.highlightLinks.add(link);
-                                    app.highlightNodes.add(app.nodeMap.get(sourceId));
-                                    app.highlightNodes.add(app.nodeMap.get(targetId));
+                                    // Make sure to only highlight nodes that are currently active
+                                    if(app.nodeMap.get(sourceId)?.active) app.highlightNodes.add(app.nodeMap.get(sourceId));
+                                    if(app.nodeMap.get(targetId)?.active) app.highlightNodes.add(app.nodeMap.get(targetId));
                                 }
                             });
                         }
@@ -1342,14 +1492,29 @@
                     .linkDirectionalParticles(link => app.highlightLinks.has(link) ? 2 : 0)
                     .linkDirectionalParticleWidth(link => app.highlightLinks.has(link) ? 3 : 0)
                     .nodeLabel(node => {
-                        const flagUrl = `./data/country-flags/flag-thumbnail-${node.id}.png`;
+                        // --- START FIX ---
+                        // Get the authoritative node data from our master map
+                        // The 'node' object passed here can be stale.
+                        const authoritativeNode = app.nodeMap.get(node.id);
+                        if (!authoritativeNode) return ""; // Should not happen, but good guard
+                        // --- END FIX ---
+
+                        const flagUrl = `./data/country-flags/flag-thumbnail-${authoritativeNode.id}.png`;
                         let tooltipHtml = `<div class="graph-tooltip">
                             <img src="${flagUrl}" class="tooltip-flag" onerror="this.style.display='none'">
-                            <div class="tooltip-country">${node.name}</div>`;
+                            <div class="tooltip-country">${authoritativeNode.name}</div>`; // Use authoritativeNode.name
                         
-                        const excludedKeys = new Set(['id', 'name', 'active', 'index', 'x', 'y', 'vx', 'vy', 'neighbors', 'links', 'fx', 'fy']);
+                        // MODIFIED: Exclude the removed view keys from the tooltip
+                        const excludedKeys = new Set([
+                            'id', 'name', 'active', 'index', 'x', 'y', 'vx', 'vy', 
+                            'neighbors', 'links', 'fx', 'fy', 
+                            'eigenvector', 'pagerank', 'gdp', 'population', 'trade_volume'
+                        ]);
 
-                        for (const [key, value] of Object.entries(node)) {
+                        // --- START FIX ---
+                        // Iterate over the authoritative node's properties
+                        for (const [key, value] of Object.entries(authoritativeNode)) {
+                        // --- END FIX ---
                             if (excludedKeys.has(key) || value === undefined) continue;
 
                             const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
