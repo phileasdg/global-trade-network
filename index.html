@@ -889,17 +889,27 @@
             showFlags: true,
             scaleNodes: true, // <-- EDITED
 
+            // --- EDITED: Expanded partnerships object ---
             partnerships: {
+                "G7": ["C124", "C250", "C276", "C380", "C392", "C826", "C840"],
                 "BRICS": ["C076", "C643", "C356", "C156", "C710"],
+                "BRICS+": ["C076", "C643", "C356", "C156", "C710", "C818", "C231", "C364", "C682", "C784"],
                 "USMCA": ["C840", "C124", "C484"],
-                "EU Core": ["C276", "C250", "C380", "C724"]
+                "Mercosur": ["C032", "C076", "C600", "C858"],
+                "ASEAN": ["C096", "C116", "C360", "C418", "C458", "C104", "C608", "C702", "C764", "C704"],
+                "EU (Core 4)": ["C276", "C250", "C380", "C724"], // Renamed from "EU Core"
+                "EU (27)": ["C040", "C056", "C100", "C191", "C196", "C203", "C208", "C233", "C246", "C250", "C276", "C300", "C348", "C372", "C380", "C428", "C440", "C442", "C470", "C528", "C616", "C620", "C642", "C703", "C705", "C724", "C752"],
+                "G20 (Economies)": ["C032", "C036", "C076", "C124", "C156", "C250", "C276", "C356", "C360", "C380", "C392", "C484", "C643", "C682", "C710", "C410", "C792", "C826", "C840"]
             },
+            // --- END EDITED ---
 
             // Color schemes
+            /* --- REMOVED: regionColors ---
             regionColors: {
                 "North America": "#ef4444", "South America": "#10b981", "Europe": "#3b82f6",
                 "Asia": "#f59e0b", "Oceania": "#06b6d4", "Middle East": "#d97706", "Africa": "#84cc16"
             },
+            */
             centralityColors: {
                 degree: { high: '#8b5cf6', medium: '#a78bfa', low: '#c4b5fd' },
                 betweenness: { high: '#ef4444', medium: '#f87171', low: '#fca5a5' },
@@ -939,7 +949,7 @@
                 if (app.productCategories.length > 0) {
                     const defaultCategory = app.productCategories.includes("All Products") ? "All Products" : app.productCategories[0];
                     await app.switchNetwork(defaultCategory);
-                    app.selectPartnership("BRICS");
+                    app.selectPartnership("BRICS+");
                 } else {
                     console.error("No product categories loaded. Cannot initialize network.");
                     document.getElementById('loading-text').textContent = 'Error: product-categories.json not found or is empty.';
@@ -957,7 +967,7 @@
 
                 if (countryCodes) {
                     for (const [id, name] of Object.entries(countryCodes)) {
-                        app.nodeMap.set(id, { id, name, active: true, region: 'Unknown' });
+                        app.nodeMap.set(id, { id, name, active: true }); // <-- REMOVED region: 'Unknown'
                     }
                 }
 
@@ -1012,10 +1022,10 @@
                     edgeList.forEach(edge => {
                         const [sourceId, targetId] = edge;
                         if (!app.nodeMap.has(sourceId)) {
-                            app.nodeMap.set(sourceId, { id: sourceId, name: `Country ${sourceId}`, active: true, region: 'Unknown' });
+                            app.nodeMap.set(sourceId, { id: sourceId, name: `Country ${sourceId}`, active: true }); // <-- REMOVED region
                         }
                         if (!app.nodeMap.has(targetId)) {
-                            app.nodeMap.set(targetId, { id: targetId, name: `Country ${targetId}`, active: true, region: 'Unknown' });
+                            app.nodeMap.set(targetId, { id: targetId, name: `Country ${targetId}`, active: true }); // <-- REMOVED region
                         }
                     });
 
@@ -1341,7 +1351,7 @@
             },
 
             getColorForValue(node) {
-                if (app.currentView === 'region') return app.regionColors[node.region] || '#6b7280';
+                // if (app.currentView === 'region') return app.regionColors[node.region] || '#6b7280'; // <-- REMOVED
                 
                 const colors = app.centralityColors[app.currentView] || app.centralityColors.closeness;
                 const { min, max } = app.viewMinMax[app.currentView] || { min: 0, max: 1 };
@@ -1494,44 +1504,36 @@
                 const existingItems = legendContainer.querySelectorAll('.legend-item, .legend-gradient');
                 existingItems.forEach(item => item.remove());
                 
-                if (app.currentView === 'region') {
-                    titleElement.textContent = 'Region';
-                    Object.entries(app.regionColors).forEach(([region, color]) => {
-                        const legendItem = document.createElement('div');
-                        legendItem.className = 'legend-item';
-                        legendItem.innerHTML = `<span class="legend-color" style="background-color: ${color};"></span><span>${region}</span>`;
-                        legendContainer.appendChild(legendItem);
-                    });
-                } else {
-                    const { min, max } = app.viewMinMax[app.currentView] || { min: 0, max: 1 };
-                    const range = max - min;
-                    const colors = app.centralityColors[app.currentView] || app.centralityColors.closeness;
-                    
-                    titleElement.textContent = app.currentView.charAt(0).toUpperCase() + app.currentView.slice(1).replace('_', ' ');
-                    
-                    const highThreshold = min + (range * 0.7);
-                    const mediumThreshold = min + (range * 0.4);
-                    
-                    const formatLabel = (val) => {
-                        if (typeof val !== 'number' || !isFinite(val)) return 'N/A';
-                        if (val > 1e6) return `${(val / 1e6).toFixed(1)}M`;
-                        if (val > 1e3) return `${(val / 1e3).toFixed(1)}K`;
-                        return val.toFixed(2);
-                    }
-
-                    const legendData = [
-                        { color: colors.high, label: `High: > ${formatLabel(highThreshold)}` },
-                        { color: colors.medium, label: `Med: > ${formatLabel(mediumThreshold)}` },
-                        { color: colors.low, label: `Low: < ${formatLabel(mediumThreshold)}` }
-                    ];
-                    
-                    legendData.forEach(item => {
-                        const legendItem = document.createElement('div');
-                        legendItem.className = 'legend-item';
-                        legendItem.innerHTML = `<span class="legend-color" style="background-color: ${item.color};"></span><span>${item.label}</span>`;
-                        legendContainer.appendChild(legendItem);
-                    });
+                // --- EDITED: Removed 'region' logic ---
+                const { min, max } = app.viewMinMax[app.currentView] || { min: 0, max: 1 };
+                const range = max - min;
+                const colors = app.centralityColors[app.currentView] || app.centralityColors.closeness;
+                
+                titleElement.textContent = app.currentView.charAt(0).toUpperCase() + app.currentView.slice(1).replace('_', ' ');
+                
+                const highThreshold = min + (range * 0.7);
+                const mediumThreshold = min + (range * 0.4);
+                
+                const formatLabel = (val) => {
+                    if (typeof val !== 'number' || !isFinite(val)) return 'N/A';
+                    if (val > 1e6) return `${(val / 1e6).toFixed(1)}M`;
+                    if (val > 1e3) return `${(val / 1e3).toFixed(1)}K`;
+                    return val.toFixed(2);
                 }
+
+                const legendData = [
+                    { color: colors.high, label: `High: > ${formatLabel(highThreshold)}` },
+                    { color: colors.medium, label: `Med: > ${formatLabel(mediumThreshold)}` },
+                    { color: colors.low, label: `Low: < ${formatLabel(mediumThreshold)}` }
+                ];
+                
+                legendData.forEach(item => {
+                    const legendItem = document.createElement('div');
+                    legendItem.className = 'legend-item';
+                    legendItem.innerHTML = `<span class="legend-color" style="background-color: ${item.color};"></span><span>${item.label}</span>`;
+                    legendContainer.appendChild(legendItem); // <-- BUG FIX: Was 'item' now 'legendItem'
+                });
+                // --- END EDITED ---
             },
             selectAll() { 
                 app.nodeMap.forEach(c => c.active = true); 
@@ -1759,3 +1761,4 @@
     </script>
 </body>
 </html>
+
