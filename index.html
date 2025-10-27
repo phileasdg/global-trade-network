@@ -779,6 +779,7 @@
                     </div>
                     <div class="view-controls" style="margin-top: 12px;">
                         <button id="flag-toggle-btn" class="view-btn active">Toggle Flags</button>
+                        <button id="scale-nodes-toggle-btn" class="view-btn active">Scale Nodes</button> <!-- <-- EDITED -->
                     </div>
                 </div>
 
@@ -886,6 +887,7 @@
             viewMinMax: {},
             productCategories: [],
             showFlags: true,
+            scaleNodes: true, // <-- EDITED
 
             partnerships: {
                 "BRICS": ["C076", "C643", "C356", "C156", "C710"],
@@ -922,6 +924,11 @@
                 console.log("App initializing...");
                 
                 app.setupEventListeners();
+                
+                // --- NEW: Explicitly set initial button state ---
+                document.getElementById('scale-nodes-toggle-btn').classList.toggle('active', app.scaleNodes);
+                // --- END NEW ---
+
                 await app.populateCategorySelector();
                 app.populatePartnershipSelector();
 
@@ -1237,6 +1244,17 @@
                     document.getElementById('flag-toggle-btn').classList.toggle('active', app.showFlags);
                     app.graph.nodeCanvasObject(app.graph.nodeCanvasObject()); // Re-render nodes
                 };
+
+                // --- NEW: Scale Nodes Toggle ---
+                document.getElementById('scale-nodes-toggle-btn').onclick = () => {
+                    app.scaleNodes = !app.scaleNodes;
+                    document.getElementById('scale-nodes-toggle-btn').classList.toggle('active', app.scaleNodes);
+                    
+                    // Re-run the nodeVal logic (which reads app.scaleNodes)
+                    app.graph.nodeVal(app.graph.nodeVal()); 
+                    // Re-run the nodeCanvasObject logic (which reads app.scaleNodes)
+                    app.graph.nodeCanvasObject(app.graph.nodeCanvasObject());
+                };
             },
 
             renderAdjacencyMatrix() {
@@ -1369,9 +1387,11 @@
 
             setView(viewType) {
                 app.currentView = viewType;
-                document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+                // --- EDITED: Make selector more specific to only target metric buttons ---
+                document.querySelectorAll('.view-btn[data-view]').forEach(btn => btn.classList.remove('active'));
                 document.querySelector(`.view-btn[data-view='${viewType}']`)?.classList.add('active');
                 app.updateLegend();
+                app.graph.nodeVal(app.graph.nodeVal()); // <-- ADDED
                 app.graph.nodeCanvasObject(app.graph.nodeCanvasObject()); // Re-render nodes
             },
 
@@ -1543,11 +1563,27 @@
                 app.graph = ForceGraph()(container)
                     .graphData({ nodes: [], links: [] })
                     .nodeId('id')
-                    .nodeVal(node => app.highlightNodes.has(node) ? 12 : 8)
+                    // --- EDITED: nodeVal logic ---
+                    .nodeVal(node => {
+                        if (app.scaleNodes && app.viewMinMax[app.currentView]) {
+                            const { min, max } = app.viewMinMax[app.currentView];
+                            if (min === undefined || max === undefined || min === Infinity || min === max) {
+                                return app.highlightNodes.has(node) ? 12 : 8; // Fallback
+                            }
+                            const val = node[app.currentView] || min;
+                            // Scale from 8px (min) to 20px (max)
+                            const scaledSize = app.normalizeValue(val, min, max, 8, 20); 
+                            // Highlighted nodes are 1.5x bigger than their scaled size
+                            return app.highlightNodes.has(node) ? scaledSize * 1.5 : scaledSize;
+                        }
+                        // Default, non-scaled behavior
+                        return app.highlightNodes.has(node) ? 12 : 8;
+                    })
+                    // --- END EDITED ---
                     .backgroundColor('#f8fafc')
                     .linkColor(link => {
                         const activeNodeCount = app.graph.graphData().nodes.length;
-                        const opacity = Math.max(0.1, 1 - activeNodeCount / 200);
+                        const opacity = Math.max(0.2, 1 - activeNodeCount / 200); // <-- EDITED: Increased min opacity
                         return `rgba(156, 163, 175, ${app.highlightLinks.has(link) ? 0.8 : opacity})`;
                     })
                     .linkCurvature(0.2)
@@ -1560,8 +1596,26 @@
                         node.fx = null;
                         node.fy = null;
                     })
+                    // --- EDITED: nodeCanvasObject logic ---
                     .nodeCanvasObject((node, ctx, globalScale) => {
-                        const size = app.highlightNodes.has(node) ? 12 : 8;
+                        let size; // Use let instead of const
+                        
+                        if (app.scaleNodes && app.viewMinMax[app.currentView]) {
+                            const { min, max } = app.viewMinMax[app.currentView];
+                            if (min === undefined || max === undefined || min === Infinity || min === max) {
+                                size = app.highlightNodes.has(node) ? 12 : 8; // Fallback
+                            } else {
+                                const val = node[app.currentView] || min;
+                                // Scale from 8px (min) to 20px (max)
+                                const scaledSize = app.normalizeValue(val, min, max, 8, 20); 
+                                // Highlighted nodes are 1.5x bigger than their scaled size
+                                size = app.highlightNodes.has(node) ? scaledSize * 1.5 : scaledSize;
+                            }
+                        } else {
+                            // Default, non-scaled behavior
+                            size = app.highlightNodes.has(node) ? 12 : 8;
+                        }
+                        
                         const flagUrl = `./data/country-flags/flag-thumbnail-${node.id}.png`;
 
                         if (app.flagImageCache[node.id] === undefined) {
